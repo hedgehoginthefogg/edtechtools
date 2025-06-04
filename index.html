@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ed Tech Tools</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Fallback for Inter font if CDN is slow or fails */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .tool-button::after {
+            content: '\25BC'; /* Downward pointing triangle */
+            font-size: 0.7em; /* Adjusted size */
+            transition: transform 0.3s ease-in-out;
+            display: inline-block; /* Needed for transform */
+        }
+
+        .tool-button.active::after {
+            transform: rotate(180deg);
+        }
+
+        .tool-description {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out, padding-top 0.5s ease-in-out, padding-bottom 0.5s ease-in-out;
+            padding-left: 1.25rem; /* Corresponds to pl-5 on button */
+            padding-right: 1.25rem; /* Corresponds to pr-5 on button */
+        }
+
+        .tool-description.open {
+            max-height: 500px; /* Adjust if descriptions are very long */
+            padding-top: 0.75rem; /* pt-3 */
+            padding-bottom: 1.25rem; /* pb-5 */
+        }
+
+        /* Custom scrollbar for description if it becomes scrollable (optional, matches your other page) */
+        .tool-description::-webkit-scrollbar {
+            width: 6px;
+        }
+        .tool-description::-webkit-scrollbar-track {
+            background: #4a5568; /* slate-700 */
+            border-radius: 10px;
+        }
+        .tool-description::-webkit-scrollbar-thumb {
+            background: #718096; /* slate-500 */
+            border-radius: 10px;
+        }
+        .tool-description::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0; /* slate-400 */
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 to-slate-800 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4 selection:bg-sky-500 selection:text-white">
+
+    <div class="w-full max-w-2xl">
+        <header class="mb-10 md:mb-12 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-cyan-300">
+                Ed Tech Tools
+            </h1>
+        </header>
+
+        <ul class="space-y-4">
+            <li class="bg-slate-800 shadow-xl rounded-lg overflow-hidden">
+                <button class="tool-button w-full text-left p-5 text-lg font-semibold text-sky-400 hover:bg-slate-700 focus:outline-none flex justify-between items-center transition-colors duration-200">
+                    <span>Citation Remover Tool</span>
+                    </button>
+                <div class="tool-description text-slate-300">
+                    <p class="leading-relaxed">
+                        This tool removes a specific type of in-text reference that isn't counted towards the word count for an assessment. It helps students and educators get a more accurate idea of the genuine word count of their work.
+                    </p>
+                    <div class="mt-4"> <a href="citation-remover.html" class="inline-block px-5 py-2 bg-gradient-to-r from-sky-500 to-cyan-500 hover:from-sky-600 hover:to-cyan-600 text-white font-medium text-sm rounded-md shadow-sm hover:shadow-md transform transition-all duration-150 ease-in-out hover:scale-105 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-opacity-75">
+                            Open Tool
+                        </a>
+                    </div>
+                </div>
+            </li>
+
+            </ul>
+
+        <footer class="mt-12 text-center">
+            <p class="text-slate-500 text-sm">
+                More tools coming soon!
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const toolButtons = document.querySelectorAll('.tool-button');
+
+            toolButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    button.classList.toggle('active'); // For arrow rotation
+                    const description = button.nextElementSibling;
+
+                    // Close other open descriptions if you only want one open at a time
+                    const allOpenDescriptions = document.querySelectorAll('.tool-description.open');
+                    allOpenDescriptions.forEach(openDesc => {
+                        if (openDesc !== description) {
+                            openDesc.classList.remove('open');
+                            openDesc.previousElementSibling.classList.remove('active');
+                        }
+                    });
+
+                    // Toggle the current description
+                    if (description.classList.contains('open')) {
+                        description.classList.remove('open');
+                    } else {
+                        description.classList.add('open');
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>

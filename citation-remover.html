@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Citation Remover & Word Counter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles if needed, or to ensure Inter font loads */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Fallback for Inter font if CDN is slow or fails */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        /* Style for the cleaned text output to preserve formatting */
+        #cleanedTextOutput {
+            white-space: pre-wrap; /* Preserves whitespace and line breaks */
+            word-wrap: break-word; /* Breaks long words to prevent overflow */
+        }
+
+        /* Custom scrollbar for better aesthetics (optional) */
+        textarea::-webkit-scrollbar, #cleanedTextOutput::-webkit-scrollbar {
+            width: 8px;
+        }
+        textarea::-webkit-scrollbar-track, #cleanedTextOutput::-webkit-scrollbar-track {
+            background: #4a5568; /* Darker track (slate-600/700) */
+            border-radius: 10px;
+        }
+        textarea::-webkit-scrollbar-thumb, #cleanedTextOutput::-webkit-scrollbar-thumb {
+            background: #718096; /* Darker thumb (slate-500) */
+            border-radius: 10px;
+        }
+        textarea::-webkit-scrollbar-thumb:hover, #cleanedTextOutput::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0; /* Lighter thumb on hover (slate-400) */
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 to-slate-800 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4 selection:bg-sky-500 selection:text-white">
+
+    <div class="container bg-slate-800 shadow-2xl rounded-xl p-6 md:p-10 w-full max-w-3xl transform transition-all duration-500 hover:scale-[1.01]">
+        
+        <div class="mb-6">
+            <a href="index.html" class="inline-flex items-center text-sky-400 hover:text-sky-300 group font-medium transition-colors duration-150 text-sm md:text-base">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 transition-transform duration-150 group-hover:-translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                </svg>
+                Back to Tools
+            </a>
+        </div>
+
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-cyan-300">Citation Remover & Word Counter</h1>
+            <p class="text-slate-400 mt-2 text-sm md:text-base">Paste your text below to remove specific in-text citations and get an accurate word count.</p>
+        </header>
+
+        <main>
+            <div class="mb-6">
+                <label for="inputText" class="block text-sm font-medium text-slate-300 mb-2">Enter your text here:</label>
+                <textarea id="inputText" rows="10" class="w-full p-4 bg-slate-700 border border-slate-600 rounded-lg shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-slate-200 placeholder-slate-500 resize-y" placeholder="Paste your text containing citations like (K10_E4) or (CPD2_E1)..."></textarea>
+            </div>
+
+            <div class="text-center mb-8">
+                <button onclick="processText()" class="px-8 py-3 bg-gradient-to-r from-sky-500 to-cyan-500 hover:from-sky-600 hover:to-cyan-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transform transition-transform duration-150 ease-in-out hover:scale-105 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-opacity-75">
+                    Process Text
+                </button>
+            </div>
+
+            <div id="resultsArea" class="bg-slate-700 p-6 rounded-lg shadow-inner" style="display: none;">
+                <h2 class="text-2xl font-semibold mb-6 text-sky-400 border-b border-slate-600 pb-3">Analysis Results:</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-slate-600 p-4 rounded-lg text-center shadow">
+                        <p class="text-sm text-slate-400">Original Word Count</p>
+                        <p id="originalWordCount" class="text-2xl font-bold text-sky-300">0</p>
+                    </div>
+                    <div class="bg-slate-600 p-4 rounded-lg text-center shadow">
+                        <p class="text-sm text-slate-400">Citations Removed</p>
+                        <p id="citationsRemovedCount" class="text-2xl font-bold text-amber-400">0</p>
+                    </div>
+                    <div class="bg-slate-600 p-4 rounded-lg text-center shadow">
+                        <p class="text-sm text-slate-400">Final Word Count</p>
+                        <p id="finalWordCount" class="text-2xl font-bold text-emerald-400">0</p>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium text-slate-300 mb-2">Citations Found:</h3>
+                    <ul id="citationsList" class="list-disc list-inside pl-2 text-slate-400 max-h-40 overflow-y-auto bg-slate-600 p-3 rounded-md shadow">
+                        </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-medium text-slate-300 mb-2">Cleaned Text:</h3>
+                    <div id="cleanedTextOutput" class="p-4 bg-slate-600 border border-slate-500 rounded-lg max-h-60 overflow-y-auto text-slate-200 shadow">
+                        </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="mt-10 text-center">
+            <button onclick="loadExample()" class="mt-2 text-base text-sky-400 hover:text-sky-300 underline font-semibold py-2 px-4 rounded-md hover:bg-slate-700/50 transition-colors duration-150">Load Example Text</button>
+        </footer>
+    </div>
+
+    <script>
+        // --- Main processing function ---
+        function processText() {
+            const inputText = document.getElementById('inputText').value;
+            const resultsArea = document.getElementById('resultsArea');
+
+            // Handle empty input
+            if (inputText.trim() === "") {
+                resultsArea.style.display = 'none';
+                let messageDiv = document.getElementById('tempMessage');
+                if (!messageDiv) {
+                    messageDiv = document.createElement('div');
+                    messageDiv.id = 'tempMessage';
+                    // Insert message before the resultsArea or another suitable place
+                    const mainElement = document.querySelector('main');
+                    const buttonDiv = document.querySelector('main .text-center'); // The button's div
+                    mainElement.insertBefore(messageDiv, buttonDiv.nextElementSibling); // Insert after button div
+                }
+                messageDiv.className = 'my-4 p-3 bg-red-600 text-white rounded-md text-center shadow-lg'; // Enhanced styling
+                messageDiv.textContent = 'Please paste some text into the area above to process.';
+                setTimeout(() => { if(messageDiv) messageDiv.remove(); }, 3000);
+                return;
+            }
+
+            // Regular expression to match the specified citation formats.
+            const citationRegex = /\((K|S|B)\d+_E\d+\)|\((CPD|LD|ED|RD)\d+_E\d+\)/g;
+
+            // --- Original Word Count (uses standard word counting) ---
+            const originalWords = countWords(inputText);
+            document.getElementById('originalWordCount').textContent = originalWords;
+
+            // --- Find and list all citations ---
+            const foundCitations = inputText.match(citationRegex);
+            const citationsListElement = document.getElementById('citationsList');
+            citationsListElement.innerHTML = ''; // Clear previous list
+
+            if (foundCitations && foundCitations.length > 0) {
+                document.getElementById('citationsRemovedCount').textContent = foundCitations.length;
+                foundCitations.forEach(citation => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'text-slate-300 break-all';
+                    listItem.textContent = citation;
+                    citationsListElement.appendChild(listItem);
+                });
+            } else {
+                document.getElementById('citationsRemovedCount').textContent = 0;
+                const listItem = document.createElement('li');
+                listItem.className = 'text-slate-400';
+                listItem.textContent = "No citations of the specified format found.";
+                citationsListElement.appendChild(listItem);
+            }
+
+            // --- Remove citations from the text by replacing with an empty string ---
+            let textWithoutCitations = inputText.replace(citationRegex, '');
+            
+            // --- Normalize spaces: replace multiple spaces with a single space and trim ---
+            let cleanedText = textWithoutCitations.replace(/\s+/g, ' ').trim();
+
+            // --- Count words in the cleaned text using the special final word count logic ---
+            const finalWordCountValue = countWordsFinal(cleanedText);
+            document.getElementById('finalWordCount').textContent = finalWordCountValue;
+
+            // --- Display the cleaned text ---
+            document.getElementById('cleanedTextOutput').textContent = cleanedText;
+
+            // --- Show the results area ---
+            resultsArea.style.display = 'block';
+            resultsArea.scrollIntoView({ behavior: 'smooth', block: 'start' }); // Scroll to results
+        }
+
+        // --- Helper function to count words (standard definition) ---
+        function countWords(text) {
+            if (!text || text.trim() === '') {
+                return 0;
+            }
+            // Split by any sequence of whitespace characters.
+            // Filter out empty strings that might result from multiple spaces.
+            const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+            return words.length;
+        }
+
+        // --- Helper function to count words for the FINAL count ---
+        // This version does NOT count words that are solely single common punctuation marks.
+        function countWordsFinal(text) {
+            if (!text || text.trim() === '') {
+                return 0;
+            }
+            const potentialWords = text.trim().split(/\s+/);
+            const words = potentialWords.filter(word => {
+                if (word.length === 0) return false; // Filter empty strings
+                // Regex for common single punctuation marks that shouldn't be counted as words if alone.
+                // Adjust this set as needed.
+                if (word.length === 1 && /^[\.,;:!?]$/.test(word)) {
+                    return false;
+                }
+                return true;
+            });
+            return words.length;
+        }
+
+        // --- Function to load example text ---
+        function loadExample() {
+            const exampleText = `Where does it come from?
+
+Contrary to popular belief, Lorem Ipsum is not simply random text (S10_E4). It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock (1978), a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur (K10_E2), from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance. The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32 (CPD2_E1).
+
+The standard chunk of Lorem Ipsum (B1_E1)  used since the 1500s is reproduced below for those interested. Sections 1.10.32 and 1.10.33 from "de Finibus Bonorum et Malorum" by Cicero (LD99_E99) are also reproduced in their exact original form, accompanied by English versions from the 1914 translation by H. Rackham (Winter, 2025).`;
+            document.getElementById('inputText').value = exampleText;
+            
+            let messageDiv = document.getElementById('tempMessage');
+            if (!messageDiv) {
+                messageDiv = document.createElement('div');
+                messageDiv.id = 'tempMessage';
+                const mainElement = document.querySelector('main');
+                const inputTextArea = document.getElementById('inputText');
+                 // Insert message before the textarea's parent div
+                mainElement.insertBefore(messageDiv, inputTextArea.parentElement);
+            }
+            messageDiv.className = 'mb-4 p-3 bg-sky-600 text-white rounded-md text-center shadow-lg'; // Adjusted styling
+            messageDiv.textContent = 'Example text loaded. Click "Process Text" to see the results.';
+            setTimeout(() => { if(messageDiv) messageDiv.remove(); }, 4000); // Increased timeout
+        }
+
+        // --- Event listener for Ctrl+Enter or Cmd+Enter in textarea to trigger processing ---
+        document.getElementById('inputText').addEventListener('keydown', function(event) { // Changed to keydown for better Enter key handling
+            if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+                event.preventDefault(); // Prevent default Enter behavior (new line)
+                processText();
+            }
+        });
+
+    </script>
+</body>
+</html>

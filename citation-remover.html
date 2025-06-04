@@ -13,25 +13,19 @@
         /* Fallback for Inter font if CDN is slow or fails */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-        /* Style for the cleaned text output to preserve formatting */
-        #cleanedTextOutput {
-            white-space: pre-wrap; /* Preserves whitespace and line breaks */
-            word-wrap: break-word; /* Breaks long words to prevent overflow */
-        }
-
         /* Custom scrollbar for better aesthetics (optional) */
-        textarea::-webkit-scrollbar, #cleanedTextOutput::-webkit-scrollbar {
+        textarea::-webkit-scrollbar, #citationsList::-webkit-scrollbar {
             width: 8px;
         }
-        textarea::-webkit-scrollbar-track, #cleanedTextOutput::-webkit-scrollbar-track {
+        textarea::-webkit-scrollbar-track, #citationsList::-webkit-scrollbar-track {
             background: #4a5568; /* Darker track (slate-600/700) */
             border-radius: 10px;
         }
-        textarea::-webkit-scrollbar-thumb, #cleanedTextOutput::-webkit-scrollbar-thumb {
+        textarea::-webkit-scrollbar-thumb, #citationsList::-webkit-scrollbar-thumb {
             background: #718096; /* Darker thumb (slate-500) */
             border-radius: 10px;
         }
-        textarea::-webkit-scrollbar-thumb:hover, #cleanedTextOutput::-webkit-scrollbar-thumb:hover {
+        textarea::-webkit-scrollbar-thumb:hover, #citationsList::-webkit-scrollbar-thumb:hover {
             background: #a0aec0; /* Lighter thumb on hover (slate-400) */
         }
     </style>
@@ -85,16 +79,12 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3 class="text-lg font-medium text-slate-300 mb-2">Citations Found:</h3>
+                    <h3 class="text-lg font-medium text-slate-300 mb-2">Citations Found and Removed:</h3>
                     <ul id="citationsList" class="list-disc list-inside pl-2 text-slate-400 max-h-40 overflow-y-auto bg-slate-600 p-3 rounded-md shadow">
                         </ul>
+                    <p class="text-xs text-slate-400 mt-3">Note: Only citations in the correct format will be removed. Make sure there are no spaces between the brackets and the citations to ensure they are correctly identified by the remover tool.</p>
                 </div>
 
-                <div>
-                    <h3 class="text-lg font-medium text-slate-300 mb-2">Cleaned Text:</h3>
-                    <div id="cleanedTextOutput" class="p-4 bg-slate-600 border border-slate-500 rounded-lg max-h-60 overflow-y-auto text-slate-200 shadow">
-                        </div>
-                </div>
             </div>
         </main>
 
@@ -116,28 +106,24 @@
                 if (!messageDiv) {
                     messageDiv = document.createElement('div');
                     messageDiv.id = 'tempMessage';
-                    // Insert message before the resultsArea or another suitable place
                     const mainElement = document.querySelector('main');
-                    const buttonDiv = document.querySelector('main .text-center'); // The button's div
-                    mainElement.insertBefore(messageDiv, buttonDiv.nextElementSibling); // Insert after button div
+                    const buttonDiv = document.querySelector('main .text-center'); 
+                    mainElement.insertBefore(messageDiv, buttonDiv.nextElementSibling); 
                 }
-                messageDiv.className = 'my-4 p-3 bg-red-600 text-white rounded-md text-center shadow-lg'; // Enhanced styling
+                messageDiv.className = 'my-4 p-3 bg-red-600 text-white rounded-md text-center shadow-lg';
                 messageDiv.textContent = 'Please paste some text into the area above to process.';
                 setTimeout(() => { if(messageDiv) messageDiv.remove(); }, 3000);
                 return;
             }
 
-            // Regular expression to match the specified citation formats.
             const citationRegex = /\((K|S|B)\d+_E\d+\)|\((CPD|LD|ED|RD)\d+_E\d+\)/g;
 
-            // --- Original Word Count (uses standard word counting) ---
             const originalWords = countWords(inputText);
             document.getElementById('originalWordCount').textContent = originalWords;
 
-            // --- Find and list all citations ---
             const foundCitations = inputText.match(citationRegex);
             const citationsListElement = document.getElementById('citationsList');
-            citationsListElement.innerHTML = ''; // Clear previous list
+            citationsListElement.innerHTML = ''; 
 
             if (foundCitations && foundCitations.length > 0) {
                 document.getElementById('citationsRemovedCount').textContent = foundCitations.length;
@@ -151,50 +137,35 @@
                 document.getElementById('citationsRemovedCount').textContent = 0;
                 const listItem = document.createElement('li');
                 listItem.className = 'text-slate-400';
-                listItem.textContent = "No citations of the specified format found.";
+                listItem.textContent = "No citations of the specified format found to remove.";
                 citationsListElement.appendChild(listItem);
             }
 
-            // --- Remove citations from the text by replacing with an empty string ---
             let textWithoutCitations = inputText.replace(citationRegex, '');
-            
-            // --- Normalize spaces: replace multiple spaces with a single space and trim ---
             let cleanedText = textWithoutCitations.replace(/\s+/g, ' ').trim();
 
-            // --- Count words in the cleaned text using the special final word count logic ---
             const finalWordCountValue = countWordsFinal(cleanedText);
             document.getElementById('finalWordCount').textContent = finalWordCountValue;
 
-            // --- Display the cleaned text ---
-            document.getElementById('cleanedTextOutput').textContent = cleanedText;
-
-            // --- Show the results area ---
             resultsArea.style.display = 'block';
-            resultsArea.scrollIntoView({ behavior: 'smooth', block: 'start' }); // Scroll to results
+            resultsArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
-        // --- Helper function to count words (standard definition) ---
         function countWords(text) {
             if (!text || text.trim() === '') {
                 return 0;
             }
-            // Split by any sequence of whitespace characters.
-            // Filter out empty strings that might result from multiple spaces.
             const words = text.trim().split(/\s+/).filter(word => word.length > 0);
             return words.length;
         }
 
-        // --- Helper function to count words for the FINAL count ---
-        // This version does NOT count words that are solely single common punctuation marks.
         function countWordsFinal(text) {
             if (!text || text.trim() === '') {
                 return 0;
             }
             const potentialWords = text.trim().split(/\s+/);
             const words = potentialWords.filter(word => {
-                if (word.length === 0) return false; // Filter empty strings
-                // Regex for common single punctuation marks that shouldn't be counted as words if alone.
-                // Adjust this set as needed.
+                if (word.length === 0) return false; 
                 if (word.length === 1 && /^[\.,;:!?]$/.test(word)) {
                     return false;
                 }
@@ -203,7 +174,6 @@
             return words.length;
         }
 
-        // --- Function to load example text ---
         function loadExample() {
             const exampleText = `Where does it come from?
 
@@ -218,18 +188,16 @@ The standard chunk of Lorem Ipsum (B1_E1)  used since the 1500s is reproduced be
                 messageDiv.id = 'tempMessage';
                 const mainElement = document.querySelector('main');
                 const inputTextArea = document.getElementById('inputText');
-                 // Insert message before the textarea's parent div
                 mainElement.insertBefore(messageDiv, inputTextArea.parentElement);
             }
-            messageDiv.className = 'mb-4 p-3 bg-sky-600 text-white rounded-md text-center shadow-lg'; // Adjusted styling
+            messageDiv.className = 'mb-4 p-3 bg-sky-600 text-white rounded-md text-center shadow-lg';
             messageDiv.textContent = 'Example text loaded. Click "Process Text" to see the results.';
-            setTimeout(() => { if(messageDiv) messageDiv.remove(); }, 4000); // Increased timeout
+            setTimeout(() => { if(messageDiv) messageDiv.remove(); }, 4000);
         }
 
-        // --- Event listener for Ctrl+Enter or Cmd+Enter in textarea to trigger processing ---
-        document.getElementById('inputText').addEventListener('keydown', function(event) { // Changed to keydown for better Enter key handling
+        document.getElementById('inputText').addEventListener('keydown', function(event) {
             if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
-                event.preventDefault(); // Prevent default Enter behavior (new line)
+                event.preventDefault(); 
                 processText();
             }
         });

@@ -109,18 +109,16 @@ if (json_last_error() !== JSON_ERROR_NONE) {
 }
 
 // --- Make API Call using cURL ---
-// Append API key as query parameter (Check Google AI docs if header method 'x-goog-api-key' is preferred/required)
-$apiUrlWithKey = $geminiApiEndpoint . '?key=' . urlencode($apiKey);
-
 $ch = curl_init();
 
-curl_setopt($ch, CURLOPT_URL, $apiUrlWithKey);
+curl_setopt($ch, CURLOPT_URL, $geminiApiEndpoint); // Use the base endpoint URL
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // Return response as string
 curl_setopt($ch, CURLOPT_POST, true);           // Set method to POST
 curl_setopt($ch, CURLOPT_POSTFIELDS, $requestBodyJson); // Set request body
 curl_setopt($ch, CURLOPT_HTTPHEADER, [          // Set headers
     'Content-Type: application/json',
-    'Accept: application/json' // Expect JSON response
+    'Accept: application/json',
+    'x-goog-api-key: ' . $apiKey // Securely send the API key as a header
 ]);
 // Optional: Add timeout
 curl_setopt($ch, CURLOPT_TIMEOUT, 45); // 45 seconds timeout (Gemini can take time)

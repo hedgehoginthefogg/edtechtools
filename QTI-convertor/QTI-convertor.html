@@ -3,55 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quiz to QTI Converter (JS Version)</title>
+    <title>Quiz to QTI Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
-        body { font-family: sans-serif; line-height: 1.6; padding: 20px; max-width: 800px; margin: auto; }
-        textarea { width: 95%; min-height: 200px; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="password"], input[type="text"] { width: 95%; padding: 8px; margin-bottom: 15px; border: 1px solid #ccc; }
-        button { padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background-color: #0056b3; }
-        button:disabled { background-color: #cccccc; cursor: not-allowed; }
-        #status { margin-top: 15px; padding: 10px; border-radius: 4px; white-space: pre-wrap; } /* Allow wrapping */
-        .status-info { background-color: #e0e0e0; }
-        .status-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .status-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        pre { background-color: #f4f4f4; padding: 10px; border: 1px solid #ddd; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; } /* For debugging output */
+        /* Fallback for Inter font if CDN is slow or fails */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Custom scrollbar for better aesthetics */
+        textarea::-webkit-scrollbar {
+            width: 8px;
+        }
+        textarea::-webkit-scrollbar-track {
+            background: #4a5568; /* slate-600/700 */
+            border-radius: 10px;
+        }
+        textarea::-webkit-scrollbar-thumb {
+            background: #718096; /* slate-500 */
+            border-radius: 10px;
+        }
+        textarea::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0; /* slate-400 */
+        }
     </style>
 </head>
-<body>
-    <h1>Quiz Text to QTI Converter (JS/PHP Version)</h1>
-    <p>Paste quiz text. The PHP backend will call Gemini, and JavaScript will generate the QTI v2.1 ZIP.</p>
+<body class="bg-gradient-to-br from-slate-900 to-slate-800 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4 selection:bg-sky-500 selection:text-white">
 
-    <label for="quizText">Quiz Text:</label>
-    <textarea id="quizText" placeholder="Paste your quiz here..."></textarea>
+    <div class="container bg-slate-800 shadow-2xl rounded-xl p-6 md:p-10 w-full max-w-3xl transform transition-all duration-500 hover:scale-[1.01]">
 
-    <label for="qPrefix">Question Name Prefix (Optional):</label>
-    <input type="text" id="qPrefix" placeholder="e.g., ABCD 1234">
+        <div class="mb-6">
+            <a href="../index.html" class="inline-flex items-center text-sky-400 hover:text-sky-300 group font-medium transition-colors duration-150 text-sm md:text-base">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 transition-transform duration-150 group-hover:-translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                </svg>
+                Back to Tools
+            </a>
+        </div>
 
-    <label for="apiKey">Your Google AI Studio API Key (Gemini):</label>
-    <input type="password" id="apiKey" placeholder="Enter your Gemini API Key (used only for API call via PHP)">
+        <header class="mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-cyan-300 text-center">Quiz Text to QTI Converter</h1>
+            <p class="text-slate-400 mt-2 text-sm md:text-base max-w-xl mx-auto text-left">Paste quiz text below (tip: you can use an AI tool like Copilot to generate your quiz!). A server-side proxy will call the Gemini API, and the browser will generate the QTI v2.1 ZIP file. IMPORTANT: By default, Google's terms and conditions for their free APIs say that they will use data for training their AI models, so only input quiz text that you are happy for them to use for this purpose.</p>
+        </header>
 
-    <button id="convertBtn">Convert to QTI ZIP</button>
+        <main>
+            <div class="space-y-6">
+                <div>
+                    <label for="quizText" class="block text-sm font-medium text-slate-300 mb-2">Quiz Text:</label>
+                    <textarea id="quizText" rows="10" class="w-full p-4 bg-slate-700 border border-slate-600 rounded-lg shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-slate-200 placeholder-slate-500 resize-y" placeholder="Paste your quiz here..."></textarea>
+                </div>
 
-    <div id="status"></div>
+                <div>
+                    <label for="qPrefix" class="block text-sm font-medium text-slate-300 mb-2">Question Name Prefix (Optional):</label>
+                    <input type="text" id="qPrefix" class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-slate-200 placeholder-slate-500" placeholder="e.g., Module 1 Assessment">
+                </div>
+
+                <div>
+                    <label for="apiKey" class="block text-sm font-medium text-slate-300 mb-2">Your Google AI Studio API Key (Gemini):</label>
+                    <input type="password" id="apiKey" class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-slate-200 placeholder-slate-500" placeholder="Enter your Gemini API Key">
+                </div>
+            </div>
+
+            <div class="text-center mt-8 mb-6">
+                <button id="convertBtn" class="px-8 py-3 bg-gradient-to-r from-sky-500 to-cyan-500 hover:from-sky-600 hover:to-cyan-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transform transition-transform duration-150 ease-in-out hover:scale-105 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-opacity-75 disabled:bg-slate-600 disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed disabled:scale-100 disabled:shadow-md">
+                    Convert to QTI ZIP
+                </button>
+            </div>
+
+            <div id="status" class="w-full p-4 rounded-md text-center shadow-lg whitespace-pre-wrap" style="display: none;"></div>
+        </main>
+    </div>
+
     <script>
         const quizTextInput = document.getElementById('quizText');
         const apiKeyInput = document.getElementById('apiKey');
         const prefixInput = document.getElementById('qPrefix');
         const convertBtn = document.getElementById('convertBtn');
         const statusDiv = document.getElementById('status');
-        // const debugPre = document.querySelector('#debugOutput pre'); // Uncomment for debug output
 
         // --- Main Event Listener ---
         convertBtn.addEventListener('click', async () => {
             const quizText = quizTextInput.value.trim();
             const apiKey = apiKeyInput.value.trim();
             const qPrefix = prefixInput.value.trim();
-
-            // Clear previous debug output
-            // if (debugPre) debugPre.textContent = '';
 
             if (!quizText || !apiKey) {
                 showStatus('Please paste quiz text and enter your API Key.', 'error');
@@ -62,26 +99,23 @@
             convertBtn.disabled = true;
 
             try {
-                // --- Step 1: Call the PHP Proxy ---
-                const response = await fetch('proxy.php', { // Point to your PHP script
+                // Step 1: Call the PHP Proxy
+                const response = await fetch('proxy.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json', // Expect JSON back
+                        'Accept': 'application/json',
                     },
                     body: JSON.stringify({
                         quiz_text: quizText,
                         api_key: apiKey
-                        // No need to send prefix here, JS handles naming
                     }),
                 });
 
-                // --- Step 2: Handle Proxy Response ---
-                const responseBodyText = await response.text(); // Get raw text first for debugging
-                // if (debugPre) debugPre.textContent += `Raw Response from proxy.php:\n${responseBodyText}\n\n`;
+                // Step 2: Handle Proxy Response
+                const responseBodyText = await response.text();
 
                 if (!response.ok) {
-                    // Try to parse error JSON from PHP/Gemini
                     let errorMsg = `Server proxy error (Status: ${response.status})`;
                     try {
                         const errorData = JSON.parse(responseBodyText);
@@ -92,44 +126,31 @@
                              errorMsg += `\nReason: ${errorData.reason}`;
                         }
                     } catch (parseError) {
-                       errorMsg += `\nResponse body: ${responseBodyText}`; // Show raw response if not JSON
+                       errorMsg += `\nResponse body: ${responseBodyText}`;
                     }
                     throw new Error(errorMsg);
                 }
 
-                // Attempt to parse the JSON data (expected from Gemini via PHP)
                 let geminiData;
                 try {
                     geminiData = JSON.parse(responseBodyText);
-                    // if (debugPre) debugPre.textContent += `Parsed Gemini Data:\n${JSON.stringify(geminiData, null, 2)}\n\n`;
                 } catch (e) {
                     throw new Error(`Failed to parse JSON response from server: ${e.message}\nResponse Body: ${responseBodyText}`);
                 }
 
-
-                if (!Array.isArray(geminiData)) {
-                     throw new Error('Parsed data is not a valid array as expected from Gemini.');
+                if (!Array.isArray(geminiData) || geminiData.length === 0) {
+                     throw new Error('Parsing resulted in zero valid questions. Please check the format of your quiz text.');
                 }
-                 if (geminiData.length === 0) {
-                     throw new Error('Parsing resulted in zero questions.');
-                 }
-
 
                 showStatus(`Received ${geminiData.length} questions from parser. Generating QTI...`, 'info');
 
-                // --- Step 3: Generate QTI XML in JavaScript ---
+                // Step 3: Generate QTI XML
                 const qtiItems = generateQtiItems(geminiData, qPrefix);
                 const manifestXml = generateManifestXml(qtiItems);
 
-                // if (debugPre && qtiItems.length > 0) {
-                //      debugPre.textContent += `Generated QTI Item 1 XML:\n${qtiItems[0].xmlString}\n\n`;
-                //      debugPre.textContent += `Generated Manifest XML:\n${manifestXml}\n\n`;
-                // }
-
-
                 showStatus('Generating ZIP file...', 'info');
 
-                // --- Step 4: Create ZIP file in JavaScript ---
+                // Step 4: Create ZIP file
                 const zip = new JSZip();
                 qtiItems.forEach(item => {
                     if (item && item.filename && item.xmlString) {
@@ -142,12 +163,12 @@
 
                 const zipBlob = await zip.generateAsync({ type: "blob" });
 
-                // --- Step 5: Trigger Download ---
+                // Step 5: Trigger Download
                 const downloadUrl = window.URL.createObjectURL(zipBlob);
                 const a = document.createElement('a');
                 a.style.display = 'none';
                 a.href = downloadUrl;
-                a.download = 'quiz_qti_inspera.zip'; // Set the download filename
+                a.download = 'quiz_qti_inspera.zip';
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(downloadUrl);
@@ -167,12 +188,21 @@
 
         function showStatus(message, type = 'info') {
             statusDiv.textContent = message;
-            statusDiv.className = `status-${type}`;
+            statusDiv.style.display = 'block';
+            // Tailwind CSS classes for different states
+            const baseClasses = 'w-full p-4 rounded-md text-center shadow-lg whitespace-pre-wrap text-white';
+            if (type === 'error') {
+                statusDiv.className = `${baseClasses} bg-red-600`;
+            } else if (type === 'success') {
+                statusDiv.className = `${baseClasses} bg-emerald-600`;
+            } else { // info
+                statusDiv.className = `${baseClasses} bg-sky-600`;
+            }
         }
 
         function escapeXml(unsafe) {
             if (typeof unsafe !== 'string') {
-                return unsafe; // Return non-strings as is
+                return unsafe;
             }
             return unsafe.replace(/[<>&'"]/g, function (c) {
                 switch (c) {
@@ -185,14 +215,14 @@
             });
         }
 
-        function generateUUID() { // Simple UUID generator
+        function generateUUID() {
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
                 var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
                 return v.toString(16);
             });
         }
 
-        // --- QTI/XML Generation Functions (JavaScript) ---
+        // --- QTI/XML Generation Functions ---
 
         function generateQtiItems(parsedQuestions, prefix) {
             const items = [];
@@ -200,32 +230,32 @@
                 if (!qData || typeof qData !== 'object' || !qData.question_stem || !Array.isArray(qData.options) || !qData.correct_answer) {
                      console.error(`Skipping invalid question data at index ${index}:`, qData);
                      showStatus(`Warning: Skipped invalid question data structure at index ${index}. Check Gemini output.`, 'error');
-                     return; // Skip this invalid item
+                     return;
                 }
 
-                const itemIndex = index; // 0-based index
+                const itemIndex = index;
                 const itemIdentifier = `item_${itemIndex}_${generateUUID()}`;
                 const questionStem = escapeXml(qData.question_stem);
                 const options = qData.options;
-                const correctAnswerText = qData.correct_answer; // Don't escape this yet, need it for comparison
+                const correctAnswerText = qData.correct_answer;
 
                 let itemTitle = `Question ${itemIndex + 1}`;
                 if (prefix) {
                     itemTitle = `${escapeXml(prefix)} Q${itemIndex + 1}`;
                 }
 
-                let choiceIdentifierMap = {}; // Map option text to choice ID
+                let choiceIdentifierMap = {};
                 let correctChoiceId = null;
 
                 let optionsXml = '';
                 options.forEach((option, optIndex) => {
                     if (option === null || option === undefined) {
                          console.warn(`Null/undefined option found in question ${itemIndex}, index ${optIndex}`);
-                         option = ""; // Treat as empty string
+                         option = "";
                     }
                     const choiceId = `choice_${optIndex}_${generateUUID()}`;
-                    const escapedOptionText = escapeXml(option.toString()); // Ensure string and escape
-                    choiceIdentifierMap[option.toString()] = choiceId; // Use original string for map key
+                    const escapedOptionText = escapeXml(option.toString());
+                    choiceIdentifierMap[option.toString()] = choiceId;
                     optionsXml += `    <simpleChoice identifier="${choiceId}">${escapedOptionText}</simpleChoice>\n`;
                     if (option.toString() === correctAnswerText) {
                         correctChoiceId = choiceId;
@@ -234,20 +264,17 @@
 
                 if (!correctChoiceId && options.length > 0) {
                      console.warn(`Correct answer '${correctAnswerText}' not found for question ${itemIndex}. Defaulting to first option.`);
-                     correctChoiceId = choiceIdentifierMap[options[0].toString()]; // Default to first
+                     correctChoiceId = choiceIdentifierMap[options[0].toString()];
                 }
                  if (!correctChoiceId) {
                       console.error(`Cannot determine correct answer ID for question ${itemIndex}.`);
-                      // Decide how to handle - skip item or create potentially invalid QTI?
-                      // For now, we'll create it without a valid correctResponse value.
                       correctChoiceId = "UNKNOWN_CORRECT_ID";
                  }
 
-
                 const qtiString = `<?xml version="1.0" encoding="UTF-8"?>
-<assessmentItem xmlns="[http://www.imsglobal.org/xsd/imsqti_v2p1](http://www.imsglobal.org/xsd/imsqti_v2p1)"
-    xmlns:xsi="[http://www.w3.org/2001/XMLSchema-instance](http://www.w3.org/2001/XMLSchema-instance)"
-    xsi:schemaLocation="[http://www.imsglobal.org/xsd/imsqti_v2p1](http://www.imsglobal.org/xsd/imsqti_v2p1) [http://www.imsglobal.org/xsd/qti/qtiv2p1/imsqti_v2p1.xsd](http://www.imsglobal.org/xsd/qti/qtiv2p1/imsqti_v2p1.xsd)"
+<assessmentItem xmlns="http://www.imsglobal.org/xsd/imsqti_v2p1"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.imsglobal.org/xsd/imsqti_v2p1 http://www.imsglobal.org/xsd/qti/qtiv2p1/imsqti_v2p1.xsd"
     identifier="${itemIdentifier}"
     title="${itemTitle}"
     adaptive="false" timeDependent="false">
@@ -271,7 +298,7 @@ ${optionsXml}
         </choiceInteraction>
     </itemBody>
 
-    <responseProcessing template="[http://www.imsglobal.org/question/qti_v2p1/rptemplates/match_correct](http://www.imsglobal.org/question/qti_v2p1/rptemplates/match_correct)"/>
+    <responseProcessing template="http://www.imsglobal.org/question/qti_v2p1/rptemplates/match_correct"/>
 
 </assessmentItem>`;
 
@@ -295,9 +322,9 @@ ${optionsXml}
             });
 
             const manifestString = `<?xml version="1.0" encoding="UTF-8"?>
-<manifest identifier="manifest_${generateUUID()}" xmlns="[http://www.imsglobal.org/xsd/imscp_v1p1](http://www.imsglobal.org/xsd/imscp_v1p1)"
-    xmlns:xsi="[http://www.w3.org/2001/XMLSchema-instance](http://www.w3.org/2001/XMLSchema-instance)"
-    xsi:schemaLocation="[http://www.imsglobal.org/xsd/imscp_v1p1](http://www.imsglobal.org/xsd/imscp_v1p1) [http://www.imsglobal.org/xsd/imscp_v1p1.xsd](http://www.imsglobal.org/xsd/imscp_v1p1.xsd) [http://www.imsglobal.org/xsd/imsqti_v2p1](http://www.imsglobal.org/xsd/imsqti_v2p1) [http://www.imsglobal.org/xsd/qti/qtiv2p1/imsqti_v2p1.xsd](http://www.imsglobal.org/xsd/qti/qtiv2p1/imsqti_v2p1.xsd)">
+<manifest identifier="manifest_${generateUUID()}" xmlns="http://www.imsglobal.org/xsd/imscp_v1p1"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.imsglobal.org/xsd/imscp_v1p1 http://www.imsglobal.org/xsd/imscp_v1p1.xsd http://www.imsglobal.org/xsd/imsqti_v2p1 http://www.imsglobal.org/xsd/qti/qtiv2p1/imsqti_v2p1.xsd">
 
     <metadata>
         <schema>IMS Content</schema>
@@ -315,6 +342,5 @@ ${resourcesXml}
         }
 
     </script>
-
 </body>
 </html>

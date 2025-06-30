@@ -136,13 +136,13 @@
             <main>
                 <h2 class="text-3xl font-bold mb-8 text-white">Choose Your Activity</h2>
                 <div class="grid md:grid-cols-2 gap-8">
-                    <div class="activity-card bg-slate-800 p-8 rounded-2xl border border-slate-700 flex flex-col items-center text-center">
+                    <div class="activity-card bg-slate-800 p-4 sm:p-6 md:p-8 rounded-2xl border border-slate-700 flex flex-col items-center text-center">
                         <div class="text-4xl mb-4">🧠</div>
                         <h3 class="text-2xl font-bold text-cyan-400 mb-3">Prompting Principles</h3>
                         <p class="text-slate-400 mb-6 flex-grow">First, match prompting tips to their examples. Then, test your knowledge in a classic memory game to help internalize the principles.</p>
                         <button id="play-memory-game-btn" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-colors w-full">Play Now</button>
                     </div>
-                    <div class="activity-card bg-slate-800 p-8 rounded-2xl border border-slate-700 flex flex-col items-center text-center">
+                    <div class="activity-card bg-slate-800 p-4 sm:p-6 md:p-8 rounded-2xl border border-slate-700 flex flex-col items-center text-center">
                          <div class="text-4xl mb-4">👻</div>
                         <h3 class="text-2xl font-bold text-amber-400 mb-3">Hallucination Reducer</h3>
                         <p class="text-slate-400 mb-6 flex-grow">Learn to write prompts that reduce AI hallucinations. While they can't be 100% avoided, this activity teaches techniques for more accurate responses.</p>
@@ -159,7 +159,7 @@
             <p class="text-slate-400 mb-6">Connect the Tip to the matching Prompt Wording.</p>
              <div class="relative" id="memory-r1-container">
                 <canvas id="memory-r1-canvas"></canvas>
-                <div class="grid grid-cols-2 gap-8 md:gap-16">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
                     <div>
                         <h2 class="text-xl font-bold text-cyan-400 mb-4">Tip</h2>
                         <div id="memory-r1-tips-col" class="match-column space-y-4"></div>
@@ -199,7 +199,7 @@
             <p class="text-slate-400 mb-6">Match the tip, explanation, and example to find the correct path!</p>
              <div class="relative" id="path-container">
                 <canvas id="path-canvas"></canvas>
-                <div class="grid grid-cols-3 gap-8 md:gap-16">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-16">
                     <div>
                         <h2 class="text-xl font-bold text-cyan-400 mb-4">Tip</h2>
                         <div id="tips-col" class="path-column space-y-6"></div>
@@ -446,6 +446,7 @@
             function drawMemoryR1Lines() {
                 if (!memoryR1Canvas) return;
                 memoryR1Ctx.clearRect(0,0, memoryR1Canvas.width, memoryR1Canvas.height);
+                if (window.innerWidth < 768) return; // 768px is the md breakpoint in Tailwind
                 for (let i = 0; i < memoryR1Correct.length; i += 2) {
                     drawLineOnCanvas(memoryR1Canvas, memoryR1Ctx, memoryR1Correct[i].element, memoryR1Correct[i+1].element, '#10b981');
                 }
@@ -530,6 +531,7 @@
             }
             function drawHallucinationLines(isTemporary = false, tempColor = 'white') {
                 pathCtx.clearRect(0, 0, pathCanvas.width, pathCanvas.height);
+                if (window.innerWidth < 768) return; // 768px is the md breakpoint in Tailwind
                 hallucinationCorrectPaths.forEach(path => {
                     const sortedPath = path.sort((a,b) => ['tip', 'explanation', 'example'].indexOf(a.type) - ['tip', 'explanation', 'example'].indexOf(b.type));
                     drawLineOnCanvas(pathCanvas, pathCtx, sortedPath[0].element, sortedPath[1].element, '#10b981');

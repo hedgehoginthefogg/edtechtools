@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Prompting Techniques Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .activity-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .activity-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 255, 255, 0.1);
+        }
+        .perspective {
+            perspective: 1000px;
+        }
+        .memory-card {
+            position: relative; 
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            transform: rotateY(0deg);
+        }
+        .memory-card.flip {
+            transform: rotateY(180deg);
+        }
+        .front-face,
+        .back-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .front-face {
+            transform: rotateY(180deg);
+        }
+        .memory-card.matched {
+            animation: match-animation 0.5s ease-in-out;
+        }
+        @keyframes match-animation {
+            0% { transform: rotateY(180deg) scale(1); box-shadow: 0 0 0 #34d399; }
+            50% { transform: rotateY(180deg) scale(1.1); box-shadow: 0 0 20px #34d399; }
+            100% { transform: rotateY(180deg) scale(1); box-shadow: 0 0 0 #34d399; }
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        /* Path Matching Styles */
+        .path-item, .match-item {
+            transition: background-color 0.3s, border-color 0.3s;
+            cursor: pointer;
+        }
+        .path-item.selected, .match-item.selected {
+            background-color: #0e7490; /* cyan-700 */
+            border-color: #67e8f9; /* cyan-300 */
+        }
+        .path-item.correct, .match-item.correct {
+            background-color: #10b981; /* emerald-500 */
+            border-color: #6ee7b7; /* emerald-300 */
+            cursor: default;
+        }
+        #path-canvas, #memory-r1-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Allows clicks to go through to items */
+            z-index: 0;
+        }
+        .path-column, .match-column {
+            z-index: 1;
+        }
+        .gap-input {
+            background-color: #475569;
+            border: 2px solid #64748b;
+            border-radius: 0.375rem;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            text-align: center;
+            transition: border-color 0.3s, transform 0.2s;
+            min-width: 80px; /* Ensure even small inputs are usable */
+        }
+        .gap-input.correct {
+            border-color: #10b981; /* emerald-500 */
+        }
+        .gap-input.incorrect {
+            border-color: #ef4444; /* red-500 */
+        }
+        .gap-input.drag-over {
+            border-color: #22d3ee; /* cyan-400 */
+            transform: scale(1.05);
+        }
+        .word-pool-item {
+            cursor: grab;
+        }
+        .word-pool-item:active {
+            cursor: grabbing;
+        }
+        .dragging {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white flex flex-col items-center justify-center min-h-screen p-4 md:p-8">
+
+    <!-- =========== HUB PAGE =========== -->
+    <div id="hub-page" class="w-full">
+        <div class="text-center w-full max-w-4xl mx-auto">
+            <header class="mb-12">
+                <h1 class="text-5xl md:text-6xl font-extrabold text-cyan-400 mb-4">Prompt playground</h1>
+                <p class="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto text-left">
+                    Welcome to your interactive training ground for AI prompting. Sharpen your skills through engaging activities and learn to craft prompts that deliver precise, creative, and reliable results.
+                </p>
+            </header>
+            <main>
+                <h2 class="text-3xl font-bold mb-8 text-white">Choose Your Activity</h2>
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="activity-card bg-slate-800 p-8 rounded-2xl border border-slate-700 flex flex-col items-center text-center">
+                        <div class="text-4xl mb-4">🧠</div>
+                        <h3 class="text-2xl font-bold text-cyan-400 mb-3">Prompting Principles</h3>
+                        <p class="text-slate-400 mb-6 flex-grow">First, match prompting tips to their examples. Then, test your knowledge in a classic memory game to help internalize the principles.</p>
+                        <button id="play-memory-game-btn" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-colors w-full">Play Now</button>
+                    </div>
+                    <div class="activity-card bg-slate-800 p-8 rounded-2xl border border-slate-700 flex flex-col items-center text-center">
+                         <div class="text-4xl mb-4">👻</div>
+                        <h3 class="text-2xl font-bold text-amber-400 mb-3">Hallucination Reducer</h3>
+                        <p class="text-slate-400 mb-6 flex-grow">Learn to write prompts that reduce AI hallucinations. While they can't be 100% avoided, this activity teaches techniques for more accurate responses.</p>
+                        <button id="play-hallucination-game-btn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-colors w-full">Practise Now</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- =========== MEMORY GAME PAGE (ROUND 1) =========== -->
+    <div id="memory-game-round1-page" class="hidden w-full">
+         <div class="w-full max-w-5xl mx-auto text-center">
+            <h1 class="text-4xl md:text-5xl font-bold text-cyan-400 mb-2">Prompting Principles: Round 1</h1>
+            <p class="text-slate-400 mb-6">Connect the Tip to the matching Prompt Wording.</p>
+             <div class="relative" id="memory-r1-container">
+                <canvas id="memory-r1-canvas"></canvas>
+                <div class="grid grid-cols-2 gap-8 md:gap-16">
+                    <div>
+                        <h2 class="text-xl font-bold text-cyan-400 mb-4">Tip</h2>
+                        <div id="memory-r1-tips-col" class="match-column space-y-4"></div>
+                    </div>
+                    <div>
+                         <h2 class="text-xl font-bold text-cyan-400 mb-4">Prompt Wording</h2>
+                        <div id="memory-r1-prompts-col" class="match-column space-y-4"></div>
+                    </div>
+                </div>
+            </div>
+            <button id="memory-r1-back-to-hub-btn" class="mt-8 bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-6 rounded-lg shadow-lg">Back to Hub</button>
+        </div>
+    </div>
+
+
+    <!-- =========== MEMORY GAME PAGE (ROUND 2) =========== -->
+    <div id="game-page" class="hidden w-full">
+        <div class="absolute top-4 right-4 w-64">
+            <h3 class="text-lg font-bold text-cyan-400 text-center mb-2">🏆 My best times</h3>
+            <div id="leaderboard" class="bg-slate-800/50 rounded-lg p-3 space-y-2"></div>
+        </div>
+        <div class="w-full max-w-4xl mx-auto text-center">
+            <h1 class="text-4xl md:text-5xl font-bold text-cyan-400 mb-2">Prompting Principles: Round 2</h1>
+            <p class="text-slate-400 mb-4">Click cards to find matching pairs!</p>
+            <div class="flex items-center justify-center space-x-4 md:space-x-6 mb-6">
+                <p class="text-lg">Moves: <span id="moves-counter" class="font-bold text-xl text-amber-400">0</span></p>
+                <p class="text-lg">Time: <span id="timer" class="font-bold text-xl text-amber-400">0s</span></p>
+                <button id="game-restart-btn" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">Restart</button>
+                <button id="game-back-to-hub-btn" class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">Back to Hub</button>
+            </div>
+        </div>
+        <main id="game-board-container" class="perspective w-full max-w-3xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4"></main>
+    </div>
+
+    <!-- =========== HALLUCINATION REDUCER PAGE (ROUND 1) =========== -->
+    <div id="hallucination-page" class="hidden w-full">
+        <div class="w-full max-w-7xl mx-auto text-center">
+            <h1 class="text-4xl md:text-5xl font-bold text-amber-400 mb-2">Hallucination Reducer: Round 1</h1>
+            <p class="text-slate-400 mb-6">Match the tip, explanation, and example to find the correct path!</p>
+             <div class="relative" id="path-container">
+                <canvas id="path-canvas"></canvas>
+                <div class="grid grid-cols-3 gap-8 md:gap-16">
+                    <div>
+                        <h2 class="text-xl font-bold text-cyan-400 mb-4">Tip</h2>
+                        <div id="tips-col" class="path-column space-y-6"></div>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-cyan-400 mb-4">Explanation</h2>
+                        <div id="explanations-col" class="path-column space-y-6"></div>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-cyan-400 mb-4">Prompt</h2>
+                        <div id="examples-col" class="path-column space-y-6"></div>
+                    </div>
+                </div>
+            </div>
+            <button id="hallucination-back-to-hub-btn" class="mt-8 bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">Back to Hub</button>
+        </div>
+    </div>
+    
+    <!-- =========== HALLUCINATION REDUCER PAGE (ROUND 2) =========== -->
+    <div id="hallucination-round2-page" class="hidden w-full">
+         <div class="w-full max-w-4xl mx-auto text-center">
+            <h1 class="text-4xl md:text-5xl font-bold text-amber-400 mb-2">Hallucination Reducer: Round 2</h1>
+            <p class="text-slate-400 mb-4">Fill in the gaps by typing or dragging words from the pool.</p>
+            <div id="word-pool" class="flex flex-wrap items-center justify-center gap-3 mb-8 p-4 bg-slate-800/50 rounded-lg min-h-[3.5rem]">
+                <!-- Word pool words will be injected here -->
+            </div>
+            <div id="fill-gaps-container" class="space-y-6 text-left text-lg">
+                <!-- Gapped sentences will be injected here -->
+            </div>
+             <div class="mt-8 space-x-4">
+                <button id="check-answers-btn" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-8 rounded-lg shadow-lg transition-colors">Check Answers</button>
+                <button id="hallucination-r2-back-to-hub-btn" class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-6 rounded-lg shadow-lg">Back to Hub</button>
+             </div>
+        </div>
+    </div>
+
+
+    <!-- Modals -->
+    <div id="memory-r1-complete-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-800 rounded-2xl p-8 text-center shadow-2xl border border-cyan-500 transform transition-all scale-95 opacity-0 fade-in" id="memory-r1-complete-modal-content">
+            <h2 class="text-4xl font-bold text-cyan-400 mb-4">Round 1 Complete!</h2>
+            <p class="text-slate-300 text-lg mb-6">Great work! Ready to test your memory to help internalize these principles?</p>
+            <div class="flex justify-center space-x-4">
+                 <button id="memory-r1-modal-hub-btn" class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg text-lg">Back to Hub</button>
+                <button id="proceed-to-r2-btn" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg text-lg">Proceed to Round 2</button>
+            </div>
+        </div>
+    </div>
+    <div id="win-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-800 rounded-2xl p-8 text-center shadow-2xl border border-cyan-500 transform transition-all scale-95 opacity-0 fade-in" id="win-modal-content">
+            <h2 class="text-4xl font-bold text-cyan-400 mb-4">You Won!</h2>
+            <p class="text-slate-300 text-lg mb-2">Congratulations! You found all the matches.</p>
+            <p class="text-slate-400 mb-6">Time: <span id="final-time" class="font-bold text-amber-400">0s</span> | Moves: <span id="final-moves" class="font-bold text-amber-400">0</span></p>
+            <div class="flex justify-center space-x-4">
+                <button id="play-again-btn" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg text-lg transition-transform transform hover:scale-105">Play Again</button>
+                <button id="win-modal-hub-btn" class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg text-lg transition-transform transform hover:scale-105">Back to Hub</button>
+            </div>
+        </div>
+    </div>
+     <div id="hallucination-victory-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-800 rounded-2xl p-8 text-center shadow-2xl border border-amber-500 transform transition-all scale-95 opacity-0 fade-in" id="hallucination-victory-modal-content">
+            <h2 class="text-4xl font-bold text-amber-400 mb-4">Perfect!</h2>
+            <p class="text-slate-300 text-lg mb-6">You've mastered these techniques for reducing hallucinations!</p>
+            <button id="hallucination-victory-hub-btn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg text-lg transition-transform transform hover:scale-105">
+                Back to Hub
+            </button>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Element Declarations ---
+            const hubPage = document.getElementById('hub-page');
+            const gamePage = document.getElementById('game-page');
+            const memoryGameRound1Page = document.getElementById('memory-game-round1-page');
+            const hallucinationPage = document.getElementById('hallucination-page');
+            const hallucinationRound2Page = document.getElementById('hallucination-round2-page');
+            const playMemoryGameBtn = document.getElementById('play-memory-game-btn');
+            const gameBackToHubBtn = document.getElementById('game-back-to-hub-btn');
+            const memoryR1BackToHubBtn = document.getElementById('memory-r1-back-to-hub-btn');
+            const proceedToR2Btn = document.getElementById('proceed-to-r2-btn');
+            const memoryR1ModalHubBtn = document.getElementById('memory-r1-modal-hub-btn');
+            const playHallucinationGameBtn = document.getElementById('play-hallucination-game-btn');
+            const hallucinationBackToHubBtn = document.getElementById('hallucination-back-to-hub-btn');
+            const hallucinationR2BackToHubBtn = document.getElementById('hallucination-r2-back-to-hub-btn');
+            const hallucinationVictoryHubBtn = document.getElementById('hallucination-victory-hub-btn');
+            const winModalHubBtn = document.getElementById('win-modal-hub-btn');
+            const memoryR1TipsCol = document.getElementById('memory-r1-tips-col');
+            const memoryR1PromptsCol = document.getElementById('memory-r1-prompts-col');
+            const memoryR1Canvas = document.getElementById('memory-r1-canvas');
+            const memoryR1Ctx = memoryR1Canvas.getContext('2d');
+            const memoryR1CompleteModal = document.getElementById('memory-r1-complete-modal');
+            const memoryR1CompleteModalContent = document.getElementById('memory-r1-complete-modal-content');
+            const gameBoard = document.getElementById('game-board-container');
+            const movesCounter = document.getElementById('moves-counter');
+            const timerDisplay = document.getElementById('timer');
+            const gameRestartBtn = document.getElementById('game-restart-btn');
+            const leaderboardDiv = document.getElementById('leaderboard');
+            const winModal = document.getElementById('win-modal');
+            const winModalContent = document.getElementById('win-modal-content');
+            const finalMovesSpan = document.getElementById('final-moves');
+            const finalTimeSpan = document.getElementById('final-time');
+            const playAgainBtn = document.getElementById('play-again-btn');
+            const tipsCol = document.getElementById('tips-col');
+            const explanationsCol = document.getElementById('explanations-col');
+            const examplesCol = document.getElementById('examples-col');
+            const pathCanvas = document.getElementById('path-canvas');
+            const pathCtx = pathCanvas.getContext('2d');
+            const fillGapsContainer = document.getElementById('fill-gaps-container');
+            const checkAnswersBtn = document.getElementById('check-answers-btn');
+            const wordPoolContainer = document.getElementById('word-pool');
+            const hallucinationVictoryModal = document.getElementById('hallucination-victory-modal');
+            const hallucinationVictoryModalContent = document.getElementById('hallucination-victory-modal-content');
+
+            // --- Page Navigation Logic ---
+            function showPage(pageToShow) {
+                [hubPage, gamePage, memoryGameRound1Page, hallucinationPage, hallucinationRound2Page].forEach(page => page.classList.add('hidden'));
+                pageToShow.classList.remove('hidden');
+                hideAllModals();
+            }
+            
+            playMemoryGameBtn.addEventListener('click', () => { showPage(memoryGameRound1Page); initMemoryGameRound1(); });
+            gameBackToHubBtn.addEventListener('click', () => showPage(hubPage));
+            memoryR1BackToHubBtn.addEventListener('click', () => showPage(hubPage));
+            proceedToR2Btn.addEventListener('click', () => { showPage(gamePage); restartGame(); });
+            memoryR1ModalHubBtn.addEventListener('click', () => showPage(hubPage));
+            playHallucinationGameBtn.addEventListener('click', () => { showPage(hallucinationPage); initHallucinationGame(); });
+            hallucinationBackToHubBtn.addEventListener('click', () => showPage(hubPage));
+            hallucinationR2BackToHubBtn.addEventListener('click', () => showPage(hubPage));
+            hallucinationVictoryHubBtn.addEventListener('click', () => showPage(hubPage));
+            winModalHubBtn.addEventListener('click', () => showPage(hubPage));
+
+            // --- Shared & Generic Logic ---
+            let synth;
+            const initSynth = () => {
+                if (!synth && window.Tone) {
+                    try {
+                        synth = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
+                    } catch (e) { console.error("Could not initialize Tone.js", e); }
+                }
+            };
+            document.body.addEventListener('click', initSynth, { once: true });
+
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+            }
+
+            function drawLineOnCanvas(canvas, context, el1, el2, color) {
+                if(!el1 || !el2) return;
+                const rect1 = el1.getBoundingClientRect(); const rect2 = el2.getBoundingClientRect();
+                const containerRect = canvas.getBoundingClientRect();
+                const startX = rect1.right - containerRect.left; const startY = rect1.top + rect1.height / 2 - containerRect.top;
+                const endX = rect2.left - containerRect.left; const endY = rect2.top + rect2.height / 2 - containerRect.top;
+                context.beginPath(); context.moveTo(startX, startY); context.lineTo(endX, endY);
+                context.strokeStyle = color; context.lineWidth = 4; context.lineCap = 'round'; context.stroke();
+            }
+            
+            function resizeMatchCanvas(canvas, containerId, drawCallback) {
+                 if(canvas && canvas.closest('.hidden') === null) {
+                    const container = document.getElementById(containerId);
+                    if (container) {
+                        canvas.width = container.offsetWidth; canvas.height = container.offsetHeight;
+                        drawCallback();
+                    }
+                }
+            }
+            
+            // --- Memory Game Round 1 Logic ---
+            let memoryR1Selected = [];
+            let memoryR1Correct = [];
+            const memoryCardData = [
+                { id: 1, type: 'tip', content: 'Specify a role and goal:' }, { id: 1, type: 'expression', content: 'Act as … Your goal is …' },
+                { id: 2, type: 'tip', content: 'Give it constraints:' }, { id: 2, type: 'expression', content: 'Use … Don’t … It’s essential that …' },
+                { id: 3, type: 'tip', content: 'Give step-by-step instructions:' }, { id: 3, type: 'expression', content: 'First … Wait for a response … Then … Wait for a response … Next … Wait for a response' },
+                { id: 4, type: 'tip', content: 'Give examples and specify output format:' }, { id: 4, type: 'expression', content: 'Answer in the format of the following example: … ' },
+                { id: 5, type: 'tip', content: 'Follow up with new instructions:' }, { id: 5, type: 'expression', content: 'That answer wasn’t good because … Try again, but this time …' },
+            ];
+
+            function initMemoryGameRound1() {
+                memoryR1Selected = []; memoryR1Correct = [];
+                const tips = memoryCardData.filter(d => d.type === 'tip');
+                const prompts = [...memoryCardData.filter(d => d.type === 'expression')];
+                shuffleArray(prompts);
+                memoryR1TipsCol.innerHTML = ''; memoryR1PromptsCol.innerHTML = '';
+                tips.forEach(item => memoryR1TipsCol.innerHTML += createMatchItemHTML(item.id, 'tip', item.content));
+                prompts.forEach(item => memoryR1PromptsCol.innerHTML += createMatchItemHTML(item.id, 'prompt', item.content));
+                addMemoryR1Listeners();
+                setTimeout(() => resizeMemoryR1Canvas(), 100);
+            }
+            
+            function createMatchItemHTML(id, type, content) {
+                const contentHTML = type === 'tip' ? `<strong>${content}</strong>` : content;
+                 return `<div class="match-item bg-slate-800 p-4 h-24 rounded-lg border-2 border-slate-700 flex items-center justify-center text-center" data-id="${id}" data-type="${type}">${contentHTML}</div>`;
+            }
+            
+            function addMemoryR1Listeners() {
+                document.querySelectorAll('#memory-game-round1-page .match-item').forEach(item => item.addEventListener('click', handleMemoryR1Click));
+            }
+            
+            function handleMemoryR1Click(event) {
+                const item = event.currentTarget;
+                const id = item.dataset.id;
+                const type = item.dataset.type;
+                if(item.classList.contains('correct')) return;
+
+                const selectedSameType = memoryR1Selected.find(i => i.type === type);
+                if (selectedSameType) {
+                    selectedSameType.element.classList.remove('selected');
+                    memoryR1Selected = memoryR1Selected.filter(i => i.type !== type);
+                }
+                
+                memoryR1Selected.push({ id, type, element: item });
+                item.classList.add('selected');
+
+                if(memoryR1Selected.length === 2) checkMemoryR1Match();
+                drawMemoryR1Lines();
+            }
+
+            function checkMemoryR1Match() {
+                 const isCorrect = memoryR1Selected[0].id === memoryR1Selected[1].id;
+                 if (isCorrect) {
+                    memoryR1Correct.push(...memoryR1Selected);
+                    memoryR1Selected.forEach(i => {
+                        i.element.classList.add('correct');
+                        i.element.classList.remove('selected');
+                    });
+                    if (synth) synth.triggerAttackRelease('C5', '8n', Tone.now());
+                    if (memoryR1Correct.length === memoryCardData.length) {
+                        setTimeout(() => {
+                            memoryR1CompleteModal.classList.remove('hidden');
+                            memoryR1CompleteModalContent.classList.remove('opacity-0', 'scale-95');
+                        }, 500);
+                    }
+                 } else {
+                    if (synth) synth.triggerAttackRelease('A2', '8n', Tone.now());
+                 }
+                 setTimeout(() => {
+                    memoryR1Selected.forEach(i => i.element.classList.remove('selected'));
+                    memoryR1Selected = [];
+                    drawMemoryR1Lines();
+                 }, isCorrect ? 100 : 800);
+            }
+            
+            function drawMemoryR1Lines() {
+                if (!memoryR1Canvas) return;
+                memoryR1Ctx.clearRect(0,0, memoryR1Canvas.width, memoryR1Canvas.height);
+                for (let i = 0; i < memoryR1Correct.length; i += 2) {
+                    drawLineOnCanvas(memoryR1Canvas, memoryR1Ctx, memoryR1Correct[i].element, memoryR1Correct[i+1].element, '#10b981');
+                }
+                if (memoryR1Selected.length === 2) {
+                    const color = memoryR1Selected[0].id === memoryR1Selected[1].id ? '#10b981' : '#ef4444';
+                    drawLineOnCanvas(memoryR1Canvas, memoryR1Ctx, memoryR1Selected[0].element, memoryR1Selected[1].element, color);
+                }
+            }
+            
+            function resizeMemoryR1Canvas() { resizeMatchCanvas(memoryR1Canvas, 'memory-r1-container', drawMemoryR1Lines); }
+            window.addEventListener('resize', resizeMemoryR1Canvas);
+
+            // --- Hallucination Reducer Logic ---
+            const hallucinationData = [
+                { id: 1, tip: '🤔 Tell Copilot that it’s okay if it doesn’t know the correct answer', explanation: 'Often AI chatbots are trained to always try and provide an answer, which can lead to them making things up.', example: 'It’s okay if you’re not certain! If you don’t have enough information or several answers are possible, explain why.', gappedExample: ["It’s okay if you’re not ", "! If you don’t have enough ", " or several answers are possible, explain why."], answers: ["certain", "information"] },
+                { id: 2, tip: '⛏️ If you’re asking Copilot to work with text or data, ask Copilot to extract evidence first before performing its analysis', explanation: 'Asking Copilot to pull out direct quotes first, and then analyse them, helps to ‘ground’ its analysis in the real data.', example: 'First, go through the text and identify quotes about pineapple on pizza. Put these quotes in a table. Then, analyse the quotes and suggest if the author is for or against pineapple on pizza.', gappedExample: ["First, go through the text and identify ", " about pineapple on pizza. Put these quotes in a ", ". Then, analyse the quotes and suggest if the author is for or against pineapple on pizza."], answers: ["quotes", "table"] },
+                { id: 3, tip: '🚶‍♂️Ask Copilot to explain its reasoning step-by-step', explanation: 'If you ask Copilot to break down its reasoning, it can help guide it towards the correct answer.', example: 'How many ‘r’s are in the word ‘strawberry’? Explain your reasoning step-by-step.', gappedExample: ["How many ‘r’s are in the word ‘strawberry’? Explain your reasoning ", "."], answers: ["step-by-step"] }
+            ];
+
+            let hallucinationSelected = [];
+            let hallucinationCorrectPaths = [];
+
+            function createPathItemHTML(id, type, content) {
+                let formattedContent = content;
+                if (type === 'tip') {
+                    formattedContent = `<strong>${content}</strong>`;
+                } else if (type === 'example') {
+                    formattedContent = `"${content}"`;
+                }
+                return `<div class="path-item bg-slate-800 p-4 rounded-lg border-2 border-slate-700 flex items-center justify-center text-center" data-id="${id}" data-type="${type}">${formattedContent}</div>`;
+            }
+
+            function initHallucinationGame() {
+                hallucinationCorrectPaths = []; hallucinationSelected = [];
+                const tips = [...hallucinationData]; const explanations = [...hallucinationData]; const examples = [...hallucinationData];
+                shuffleArray(tips); shuffleArray(explanations); shuffleArray(examples);
+                tipsCol.innerHTML = ''; explanationsCol.innerHTML = ''; examplesCol.innerHTML = '';
+                tips.forEach(item => tipsCol.innerHTML += createPathItemHTML(item.id, 'tip', item.tip));
+                explanations.forEach(item => explanationsCol.innerHTML += createPathItemHTML(item.id, 'explanation', item.explanation));
+                examples.forEach(item => examplesCol.innerHTML += createPathItemHTML(item.id, 'example', item.example));
+                addHallucinationListeners();
+                setTimeout(() => resizeHallucinationCanvas(), 100);
+            }
+            function addHallucinationListeners() { document.querySelectorAll('#hallucination-page .path-item').forEach(item => { item.addEventListener('click', handleHallucinationPathClick); });}
+            function handleHallucinationPathClick(event) {
+                const item = event.currentTarget;
+                if (item.classList.contains('correct')) return;
+                const id = item.dataset.id;
+                const type = item.dataset.type;
+                const selectedIndex = hallucinationSelected.findIndex(i => i.element === item);
+                if (selectedIndex > -1) {
+                    hallucinationSelected.splice(selectedIndex, 1);
+                    item.classList.remove('selected');
+                } else {
+                    const sameTypeIndex = hallucinationSelected.findIndex(i => i.type === type);
+                    if (sameTypeIndex > -1) {
+                        hallucinationSelected[sameTypeIndex].element.classList.remove('selected');
+                        hallucinationSelected.splice(sameTypeIndex, 1);
+                    }
+                    hallucinationSelected.push({ id, type, element: item });
+                    item.classList.add('selected');
+                }
+                if (hallucinationSelected.length === 3) checkHallucinationPath();
+                drawHallucinationLines();
+            }
+            function checkHallucinationPath() {
+                const isCorrect = hallucinationSelected.every(item => item.id === hallucinationSelected[0].id);
+                if (isCorrect) {
+                    hallucinationCorrectPaths.push([...hallucinationSelected]);
+                    hallucinationSelected.forEach(item => { item.element.classList.add('correct'); item.element.classList.remove('selected'); });
+                    if (synth) synth.triggerAttackRelease('C5', '8n', Tone.now());
+                } else { if (synth) synth.triggerAttackRelease('A2', '8n', Tone.now()); }
+                drawHallucinationLines(true, isCorrect ? '#10b981' : '#ef4444');
+                setTimeout(() => {
+                    if (!isCorrect) { hallucinationSelected.forEach(item => item.element.classList.remove('selected')); }
+                    hallucinationSelected = [];
+                    drawHallucinationLines();
+                    if (hallucinationCorrectPaths.length === hallucinationData.length) {
+                        setTimeout(() => { showPage(hallucinationRound2Page); initRound2(); }, 800);
+                    }
+                }, isCorrect ? 300 : 1000);
+            }
+            function drawHallucinationLines(isTemporary = false, tempColor = 'white') {
+                pathCtx.clearRect(0, 0, pathCanvas.width, pathCanvas.height);
+                hallucinationCorrectPaths.forEach(path => {
+                    const sortedPath = path.sort((a,b) => ['tip', 'explanation', 'example'].indexOf(a.type) - ['tip', 'explanation', 'example'].indexOf(b.type));
+                    drawLineOnCanvas(pathCanvas, pathCtx, sortedPath[0].element, sortedPath[1].element, '#10b981');
+                    drawLineOnCanvas(pathCanvas, pathCtx, sortedPath[1].element, sortedPath[2].element, '#10b981');
+                });
+                 if (hallucinationSelected.length > 1) {
+                    const sorted = [...hallucinationSelected].sort((a,b) => ['tip', 'explanation', 'example'].indexOf(a.type) - ['tip', 'explanation', 'example'].indexOf(b.type));
+                    for(let i=0; i < sorted.length - 1; i++) {
+                        if (sorted[i+1]) drawLineOnCanvas(pathCanvas, pathCtx, sorted[i].element, sorted[i+1].element, isTemporary ? tempColor : 'white');
+                    }
+                }
+            }
+            function resizeHallucinationCanvas() { resizeMatchCanvas(pathCanvas, 'path-container', drawHallucinationLines); }
+            window.addEventListener('resize', resizeHallucinationCanvas);
+
+            function initRound2() {
+                fillGapsContainer.innerHTML = ''; wordPoolContainer.innerHTML = '';
+                hallucinationData.forEach((item) => {
+                    const sentenceContainer = document.createElement('div');
+                    sentenceContainer.className = 'bg-slate-800 p-6 rounded-lg flex items-center flex-wrap gap-2';
+                    sentenceContainer.dataset.r2Id = item.id;
+                    item.gappedExample.forEach((part, i) => {
+                        sentenceContainer.appendChild(document.createTextNode(part));
+                        if (i < item.answers.length) {
+                            const inputElement = document.createElement('input');
+                            inputElement.type = 'text'; inputElement.className = 'gap-input';
+                            inputElement.dataset.answerIndex = i; inputElement.style.width = `${item.answers[i].length * 0.9 + 2}ch`;
+                            inputElement.addEventListener('dragover', e => { e.preventDefault(); e.target.classList.add('drag-over'); });
+                            inputElement.addEventListener('dragleave', e => { e.target.classList.remove('drag-over'); });
+                            inputElement.addEventListener('drop', e => {
+                                e.preventDefault(); e.target.classList.remove('drag-over');
+                                const data = e.dataTransfer.getData('text/plain');
+                                e.target.value = data; e.target.style.width = `${data.length * 0.9 + 2}ch`;
+                            });
+                            sentenceContainer.appendChild(inputElement);
+                        }
+                    });
+                    fillGapsContainer.appendChild(sentenceContainer);
+                });
+                const allAnswers = hallucinationData.flatMap(item => item.answers);
+                shuffleArray(allAnswers);
+                allAnswers.forEach(word => {
+                    const wordElement = document.createElement('div');
+                    wordElement.textContent = word; wordElement.className = 'word-pool-item bg-sky-700 text-white font-semibold py-1 px-4 rounded-full transition-transform transform hover:scale-110';
+                    wordElement.draggable = true;
+                    wordElement.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('text/plain', e.target.textContent);
+                        setTimeout(() => e.target.classList.add('dragging'), 0);
+                    });
+                    wordElement.addEventListener('dragend', (e) => { e.target.classList.remove('dragging'); });
+                    wordPoolContainer.appendChild(wordElement);
+                });
+            }
+            function checkRound2Answers() {
+                let allCorrect = true;
+                hallucinationData.forEach(item => {
+                    const container = fillGapsContainer.querySelector(`[data-r2-id="${item.id}"]`);
+                    const inputs = container.querySelectorAll('.gap-input');
+                    inputs.forEach((input, i) => {
+                        const isCorrect = input.value.trim().toLowerCase().replace(/[.!,]/g, '') === item.answers[i].toLowerCase().replace(/[.!,]/g, '');
+                        input.classList.remove('correct', 'incorrect'); input.classList.add(isCorrect ? 'correct' : 'incorrect');
+                        if (!isCorrect) allCorrect = false;
+                    });
+                });
+                if (allCorrect) {
+                     if (synth) synth.triggerAttackRelease('G5', '8n', Tone.now());
+                     hallucinationVictoryModal.classList.remove('hidden');
+                     hallucinationVictoryModalContent.classList.remove('opacity-0', 'scale-95');
+                } else {
+                     if (synth) synth.triggerAttackRelease('A2', '8n', Tone.now());
+                }
+            }
+            checkAnswersBtn.addEventListener('click', checkRound2Answers);
+
+            // --- Memory Game (R2) Logic ---
+            let hasFlippedCard = false, lockBoard = false;
+            let firstCard, secondCard;
+            let moves = 0, matchedPairs = 0;
+            let timerInterval;
+            let seconds = 0;
+            let gameStarted = false;
+
+            function startTimer() {
+                if (gameStarted) return;
+                gameStarted = true;
+                seconds = 0;
+                timerDisplay.textContent = `${seconds}s`;
+                timerInterval = setInterval(() => {
+                    seconds++;
+                    timerDisplay.textContent = `${seconds}s`;
+                }, 1000);
+            }
+            function stopTimer() { clearInterval(timerInterval); gameStarted = false; }
+            function getScores() { return JSON.parse(localStorage.getItem('memoryGameScores')) || []; }
+            function saveScores(scores) { localStorage.setItem('memoryGameScores', JSON.stringify(scores)); }
+            function updateLeaderboard() {
+                const scores = getScores();
+                leaderboardDiv.innerHTML = '';
+                if (scores.length === 0) {
+                    leaderboardDiv.innerHTML = '<p class="text-slate-500 text-sm text-center">No scores yet!</p>';
+                    return;
+                }
+                scores.slice(0, 5).forEach((score, index) => {
+                    const scoreElement = document.createElement('div');
+                    scoreElement.classList.add('flex', 'justify-between', 'items-center', 'text-sm', 'p-1', 'rounded', index === 0 ? 'bg-amber-500/20' : '');
+                    scoreElement.innerHTML = `<span class="font-bold">#${index + 1}</span><span class="text-slate-400">${score.time}s / ${score.moves} moves</span>`;
+                    leaderboardDiv.appendChild(scoreElement);
+                });
+            }
+            function shuffleMemory() {
+                let currentIndex = memoryCardData.length, randomIndex;
+                while (currentIndex != 0) {
+                    randomIndex = Math.floor(Math.random() * currentIndex);
+                    currentIndex--;
+                    [memoryCardData[currentIndex], memoryCardData[randomIndex]] = [memoryCardData[randomIndex], memoryCardData[currentIndex]];
+                }
+            }
+            function createBoard() {
+                gameBoard.innerHTML = '';
+                shuffleMemory();
+                memoryCardData.forEach(cardInfo => {
+                    const card = document.createElement('div');
+                    card.classList.add('memory-card', 'h-40', 'md:h-48', 'rounded-lg', 'cursor-pointer');
+                    card.dataset.id = cardInfo.id;
+                    const contentHTML = cardInfo.type === 'tip' ? `<strong>${cardInfo.content}</strong>` : cardInfo.content;
+                    card.innerHTML = `
+                        <div class="back-face bg-slate-700 rounded-lg flex items-center justify-center p-2 border-2 border-slate-600 hover:border-cyan-400 transition-colors">
+                            <svg class="w-10 h-10 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <div class="front-face bg-slate-800 rounded-lg flex items-center justify-center text-center p-3 border-2 border-cyan-500">
+                           <span class="text-sm md:text-base">${contentHTML}</span>
+                        </div>`;
+                    card.addEventListener('click', flipCard);
+                    gameBoard.appendChild(card);
+                });
+            }
+            function flipCard() {
+                if (lockBoard || this === firstCard) return;
+                if (!gameStarted) startTimer();
+                this.classList.add('flip');
+                if (!hasFlippedCard) {
+                    hasFlippedCard = true;
+                    firstCard = this;
+                    return;
+                }
+                secondCard = this;
+                incrementMoves();
+                checkForMatch();
+            }
+            function checkForMatch() {
+                let isMatch = firstCard.dataset.id === secondCard.dataset.id;
+                isMatch ? disableCards() : unflipCards();
+            }
+            function disableCards() {
+                lockBoard = true;
+                setTimeout(() => {
+                    firstCard.classList.add('matched'); secondCard.classList.add('matched');
+                    if (synth) synth.triggerAttackRelease('C5', '8n', Tone.now());
+                    firstCard.removeEventListener('click', flipCard); secondCard.removeEventListener('click', flipCard);
+                    matchedPairs++;
+                    resetBoard();
+                    if (matchedPairs === memoryCardData.length / 2) {
+                        stopTimer();
+                        autoSaveScore();
+                        showWinModal();
+                    }
+                }, 500);
+            }
+            function unflipCards() {
+                lockBoard = true;
+                setTimeout(() => {
+                    firstCard.classList.remove('flip'); secondCard.classList.remove('flip');
+                    resetBoard();
+                }, 1200);
+            }
+            function resetBoard() { [hasFlippedCard, lockBoard, firstCard, secondCard] = [false, false, null, null]; }
+            function incrementMoves() { moves++; movesCounter.textContent = moves; }
+            function showWinModal() {
+                 setTimeout(() => {
+                    finalMovesSpan.textContent = moves; finalTimeSpan.textContent = `${seconds}s`;
+                    winModal.classList.remove('hidden');
+                    winModalContent.classList.remove('opacity-0', 'scale-95');
+                }, 200);
+            }
+            function hideAllModals() {
+                winModal.classList.add('hidden');
+                hallucinationVictoryModal.classList.add('hidden');
+                memoryR1CompleteModal.classList.add('hidden');
+                winModalContent.classList.add('opacity-0', 'scale-95');
+                hallucinationVictoryModalContent.classList.add('opacity-0', 'scale-95');
+                memoryR1CompleteModalContent.classList.add('opacity-0', 'scale-95');
+            }
+            function restartGame() {
+                hideAllModals();
+                stopTimer();
+                moves = 0; matchedPairs = 0; seconds = 0; gameStarted = false;
+                movesCounter.textContent = '0';
+                timerDisplay.textContent = '0s';
+                resetBoard();
+                setTimeout(() => { updateLeaderboard(); createBoard(); }, 100);
+            }
+            function autoSaveScore() {
+                const scores = getScores();
+                scores.push({ time: seconds, moves });
+                scores.sort((a, b) => {
+                    if (a.time !== b.time) return a.time - b.time;
+                    return a.moves - b.moves;
+                });
+                saveScores(scores.slice(0, 5));
+                updateLeaderboard();
+            }
+            
+            // --- Event Listeners ---
+            gameRestartBtn.addEventListener('click', restartGame);
+            playAgainBtn.addEventListener('click', restartGame);
+            
+            // --- Initial App Start ---
+            updateLeaderboard();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help Robot Paint Prompts!</title>
+    <meta name="description" content="Interactive game to help users learn prompt engineering by identifying different components of prompts">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.10/purify.min.js"></script>
+    <style>
+        @keyframes fall {
+            0% { transform: translateY(-20vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(120vh) rotate(720deg); opacity: 0; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script>
+        function RotateCcw(props) {
+            const size = props.size || 16;
+            return React.createElement('svg', {
+                width: size, height: size, viewBox: '0 0 24 24', fill: 'none',
+                stroke: 'currentColor', strokeWidth: '2', strokeLinecap: 'round', strokeLinejoin: 'round'
+            }, 
+            React.createElement('path', { d: 'M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8' }),
+            React.createElement('path', { d: 'M3 3v5h5' })
+            );
+        }
+        
+        function MusicIcon(props) {
+             const size = props.size || 24;
+             return React.createElement('svg', {
+                 width: size, height: size, viewBox: '0 0 24 24', fill: 'none',
+                 stroke: 'currentColor', strokeWidth: '2', strokeLinecap: 'round', strokeLinejoin: 'round'
+             },
+             React.createElement('path', { d: 'M9 18V5l12-2v13' }),
+             React.createElement('circle', { cx: '6', cy: '18', r: '3' }),
+             React.createElement('circle', { cx: '18', cy: '16', r: '3' })
+             );
+        }
+
+        function XIcon(props) {
+            const size = props.size || 24;
+            return React.createElement('svg', {
+                width: size, height: size, viewBox: '0 0 24 24', fill: 'none',
+                stroke: 'currentColor', strokeWidth: '2', strokeLinecap: 'round', strokeLinejoin: 'round'
+            },
+            React.createElement('line', { x1: '18', y1: '6', x2: '6', y2: '18' }),
+            React.createElement('line', { x1: '6', y1: '6', x2: '18', y2: '18' })
+            );
+        }
+
+        function PromptHighlightingGame() {
+            const [selectedCategory, setSelectedCategory] = React.useState(null);
+            const [highlights, setHighlights] = React.useState({});
+            const [showResults, setShowResults] = React.useState(false);
+            const [correctCount, setCorrectCount] = React.useState(0);
+            const [totalCategories, setTotalCategories] = React.useState(0);
+            const [currentPrompt, setCurrentPrompt] = React.useState(1);
+            const [musicEnabled, setMusicEnabled] = React.useState(false);
+            const [currentTrack, setCurrentTrack] = React.useState(null);
+            const [showVictoryModal, setShowVictoryModal] = React.useState(false);
+            const [isMusicMenuOpen, setIsMusicMenuOpen] = React.useState(false);
+            const [isPaletteOpen, setIsPaletteOpen] = React.useState(false);
+            
+            // Refs for managing audio state
+            const audioContextRef = React.useRef(null);
+            const schedulerTimeoutRef = React.useRef(null);
+            const isPlayingRef = React.useRef(false);
+            const sfxAudioContextRef = React.useRef(null);
+
+            const categories = [
+                { id: 'constraints', label: 'Constraints', color: 'bg-blue-200', textColor: 'text-blue-800' },
+                { id: 'examples', label: 'Examples / Output format', color: 'bg-green-200', textColor: 'text-green-800' },
+                { id: 'role', label: 'Role and goal', color: 'bg-yellow-200', textColor: 'text-yellow-800' },
+                { id: 'knowledge', label: 'Context / Knowledge', color: 'bg-purple-200', textColor: 'text-purple-800' },
+                { id: 'process', label: 'Step-by-step process', color: 'bg-orange-200', textColor: 'text-orange-800' },
+                { id: 'hallucinations', label: 'Reduce hallucinations', color: 'bg-pink-200', textColor: 'text-pink-800' },
+            ];
+
+            const promptData = {
+                1: {
+                    title: "Find an Ed Tech tool! (Copilot Agent prompt)",
+                    sections: [
+                        { id: 'role2', text: "Your goal is to help Coventry University staff understand which software they have access to with the University's licenses, and which software is most appropriate for their needs.", category: 'role' },
+                        { id: 'constraints2_1', text: "Only answer using information from the KNOWLEDGE section below.", category: 'hallucinations' },
+                        { id: 'constraints2_2', text: "IMPORTANT: If you don't have enough information to answer the user's question, that's okay – just suggest they email the Ed Tech team directly via learningenhance@coventry.ac.uk.", category: 'hallucinations' },
+                        { id: 'constraints2_3', text: "For further information, refer people to the Coventry University Teaching Knowledge Base (always provide a direct link to the page about the tool).", category: 'process' },
+                        { id: 'constraints2_4', text: "If people ask about anything to do with screen recording, lecture capture or video, ask them to refer to the Learning Capture Framework on the Coventry University Teaching Knowledge Base.", category: 'process' },
+                        { id: 'knowledge2_1', text: "<strong>Tool:</strong> Engageli <strong>Use:</strong> Software for teaching online classes. It’s similar to Teams / Zoom but created specifically for teaching. You can put students into tables to facilitate group work, use quizzes and polls without needing other tools, and it integrates with Aula. IMPORTANT: Always mention Engageli when people ask about polls or informal quizzes, or Teams / Zoom, or teaching online. Engageli is the preferred tool for live online classes at Coventry University. <a href='https://teach.coventry.domains/articles/engageli-learning-materials/' target='_blank' rel='noopener noreferrer'>See https://teach.coventry.domains/articles/engageli-learning-materials/</a>", category: 'knowledge' },
+                        { id: 'knowledge2_2', text: "<strong>Tool:</strong> Mentimeter <strong>Use:</strong> Interactive presentation platform for real-time polls, quizzes and word clouds. Students participate via mobile devices without apps. Increases engagement and provides instant visual feedback during classes. <a href='https://teach.coventry.domains/articles/mentimeter/' target='_blank' rel='noopener noreferrer'>See https://teach.coventry.domains/articles/mentimeter/</a>", category: 'knowledge' },
+                        { id: 'knowledge2_3', text: "<strong>Tool:</strong> PebblePad <strong>Use:</strong> Digital portfolio platform where students document learning journeys, collect evidence, and reflect on experiences. Enables creation of CVs, journals, and assessment submissions while promoting professional development through personalized workspaces. IMPORTANT: Always mention Wordpress and Pebblepad when people ask about portfolios. <a href='https://teach.coventry.domains/articles/pebblepad/' target='_blank' rel='noopener noreferrer'>See https://teach.coventry.domains/articles/pebblepad/</a>", category: 'knowledge' },
+                        { id: 'knowledge2_4', text: "<strong>Tool:</strong> Microsoft Forms <strong>Use:</strong> Simple survey and quiz creation tool integrated with Microsoft 365. Allows instructors to quickly build assessments, gather feedback, and automatically grade responses. Results can be exported to Excel or viewed as visual summaries. Important: for formal assessments, Inspera should be used. <a href='https://teach.coventry.domains/articles/microsoft-forms/' target='_blank' rel='noopener noreferrer'>See https://teach.coventry.domains/articles/microsoft-forms/</a>", category: 'knowledge' },
+                        { id: 'knowledge2_5', text: "<strong>Tool:</strong> Inspera <strong>Use:</strong> Digital assessment platform for creating, delivering and grading online exams or quizzes. Supports various question types and integrates with Aula. IMPORTANT: Always mention Inspera as the first option when people ask about quizzes, tests, exams or assessment. <a href='https://teach.coventry.domains/inspera/' target='_blank' rel='noopener noreferrer'>See https://teach.coventry.domains/inspera/</a>", category: 'knowledge' },
+                        { id: 'knowledge2_6', text: "<strong>Tool:</strong> Adobe Express <strong>Use:</strong> Web-based design platform for creating graphics, videos, and web pages without design expertise. <a href='https://teach.coventry.domains/articles/adobe-express/' target='_blank' rel='noopener noreferrer'>See https://teach.coventry.domains/articles/adobe-express/</a>", category: 'knowledge' },
+                        { id: 'knowledge2_7', text: "<strong>Tool:</strong> Adobe Podcast <strong>Use:</strong> A web-based platform that you can use to record and edit audio content. It uses a simple 'text-based editor' – this means it transcribes your audio and you can edit the recording by editing the transcript, just as if you are editing a Word doc! It also includes a great 'enhance speech' feature that uses AI to clean up background noise in your audio or video recordings. <a href='https://teach.coventry.domains/articles/adobe-podcast/' target='_blank' rel='noopener noreferrer'>See https://teach.coventry.domains/articles/adobe-podcast/</a>", category: 'knowledge' },
+                        { id: 'knowledge2_8', text: "<strong>Tool:</strong> WordPress (Coventry Domains) <strong>Use:</strong> Website creation and blogging platform that enables students to publish digital content without coding knowledge. Supports portfolio development, course websites, and collaborative publishing projects with customizable designs and multimedia integration. IMPORTANT: Always mention Wordpress and Pebblepad when people ask about portfolios. <a href='https://teach.coventry.domains/articles/coventry-domains/' target='_blank' rel='noopener noreferrer'>See https://teach.coventry.domains/articles/coventry-domains/</a>", category: 'knowledge' },
+                        { id: 'knowledge2_9', text: "<strong>Tool:</strong> Padlet <strong>Use:</strong> Digital bulletin board tool for collaborative learning, curation or resources and portfolios. Students can post notes, links, images and videos on a shared canvas. Supports both real-time and asynchronous collaboration. <a href='https://teach.coventry.domains/articles/padlet/' target='_blank' rel='noopener noreferrer'>See https://teach.coventry.domains/articles/padlet/</a>", category: 'knowledge' },
+                        { id: 'knowledge2_10', text: "<strong>Tool:</strong> ScreenPal (formerly Screencast-o-matic) <strong>Use:</strong> Screen recording and video creation tool for making tutorials, feedback videos, and presentations. <a href='https://teach.coventry.domains/articles/screencast-o-matic/' target='_blank' rel='noopener noreferrer'>See https://teach.coventry.domains/articles/screencast-o-matic/</a>", category: 'knowledge' },
+                        { id: 'knowledge2_11', text: "<strong>Tool:</strong> Microsoft Stream <strong>Use:</strong> Video hosting platform integrated with Microsoft 365. Allows you to share video with colleagues, do basic edits, automatically-generate captions, and capture short screen recordings. <a href='https://teach.coventry.domains/articles/microsoft-stream/' target='_blank' rel='noopener noreferrer'>See https://teach.coventry.domains/articles/microsoft-stream/</a>", category: 'knowledge' },
+                        { id: 'knowledge2_12', text: "<strong>Tool:</strong> Planet Estream <strong>Use:</strong> The University’s preferred platform for long-term storing, managing and sharing of media content. Has a video quiz feature. Integrates with Aula. <a href='https://teach.coventry.domains/articles/planet-estream/' target='_blank' rel='noopener noreferrer'>See https://teach.coventry.domains/articles/planet-estream/</a>", category: 'knowledge' },
+                        { id: 'knowledge2_13', text: "<strong>Tool:</strong> Aula <strong>Use:</strong> The centre of the University’s Ed Tech ecosystem. This is the hub from which course content is shared with students, and it has features to promote engagement and communication like the Feed, and student Groups. <a href='https://teach.coventry.domains/aula/' target='_blank' rel='noopener noreferrer'>See https://teach.coventry.domains/aula/</a>", category: 'knowledge' },
+                        { id: 'knowledge2_14', text: "<strong>Tool:</strong> Copilot <strong>Use:</strong> AI-powered assistant (similar to ChatGPT) integrated with Microsoft 365. Helps create content, summarize documents, generate ideas, and answer questions. <a href='https://teach.coventry.domains/articles/microsoft-copilot-formerly-bing-chat-enterprise/' target='_blank' rel='noopener noreferrer'>See https://teach.coventry.domains/articles/microsoft-copilot-formerly-bing-chat-enterprise/</a>", category: 'knowledge' },
+                        { id: 'knowledge2_15', text: "<strong>Tool:</strong> LinkedIn Learning <strong>Use:</strong> Video courses to help staff and students with CPD on a wide range of topics. <a href='https://teach.coventry.domains/articles/linkedin-learning/' target='_blank' rel='noopener noreferrer'>See https://teach.coventry.domains/articles/linkedin-learning/</a>", category: 'knowledge' },
+                        { id: 'knowledge2_16', text: "<strong>Tool:</strong> Microsoft Office <strong>Use:</strong> Comprehensive productivity suite including Word, Excel, PowerPoint, and Outlook. Provides essential tools for document creation, data analysis, presentations, and communication. Supports collaboration through cloud integration and real-time co-authoring for academic work. The desktop version of PowerPoint can be used to make screen recordings or video presentations (the online version doesn’t have this functionality). Go to the Teaching Knowledge Base page and search for the specific app you’re interested in for more information.", category: 'knowledge' },
+                        { id: 'knowledge2_17', text: "<strong>Tool:</strong> Microsoft Teams <strong>Use:</strong> Collaborative platform for virtual meetings, file sharing, and communication. Integrates with other Microsoft tools like Sharepoint / OneDrive for file storage and sharing, and Microsoft Stream for sharing video. Important note: Engageli is the preferred platform for online teaching, as it’s specifically designed to support active learning. <a href='https://teach.coventry.domains/articles/microsoft-teams/' target='_blank' rel='noopener noreferrer'>See https://teach.coventry.domains/articles/microsoft-teams/</a>", category: 'knowledge' },
+                        { id: 'knowledge2_18', text: "<strong>Tool:</strong> Microsoft Clipchamp <strong>Use:</strong> Video editing software that allows faculty and students to create, edit, and share professional-looking videos without advanced technical skills. It features intuitive drag-and-drop functionality, a library of stock media, text-to-speech capabilities, and seamless integration with Microsoft 365. Particularly useful for creating instructional videos, student presentations, and digital storytelling projects. <a href='https://teach.coventry.domains/articles/microsoft-clipchamp/' target='_blank' rel='noopener noreferrer'>See https://teach.coventry.domains/articles/microsoft-clipchamp/</a>", category: 'knowledge' },
+                        { id: 'knowledge2_19', text: "<strong>Tool:</strong> HandIn <strong>Use:</strong> HandIn is Aula’s build-in assessment tool. It’s typically used for large multimedia assessments (such as video) as it supports files of up to 1GB, whereas TurnItIn only accepts files up to 100mb. You MUST always mention Inspera, HandIn, TurnItIn when people ask about assessments. <a href='https://teach.coventry.domains/articles/handin-by-aula/' target='_blank' rel='noopener noreferrer'>See https://teach.coventry.domains/articles/handin-by-aula/</a>", category: 'knowledge' },
+                        { id: 'knowledge2_20', text: "<strong>Tool:</strong> TurnItIn <strong>Use:</strong> TurnItIn is an assessment tool that integrates with Aula. It has a similarity checker so it’s most suited to written assessments like essays. You MUST always mention Inspera, HandIn, TurnItIn when people ask about assessments. <a href='https://teach.coventry.domains/articles/turnitin/' target='_blank' rel='noopener noreferrer'>See https://teach.coventry.domains/articles/turnitin/</a>", category: 'knowledge' }
+                    ],
+                    correctAnswers: {
+                        'role': ['role2'],
+                        'constraints': [],
+                        'process': ['constraints2_3', 'constraints2_4'],
+                        'knowledge': ['knowledge2_1', 'knowledge2_2', 'knowledge2_3', 'knowledge2_4', 'knowledge2_5', 'knowledge2_6', 'knowledge2_7', 'knowledge2_8', 'knowledge2_9', 'knowledge2_10', 'knowledge2_11', 'knowledge2_12', 'knowledge2_13', 'knowledge2_14', 'knowledge2_15', 'knowledge2_16', 'knowledge2_17', 'knowledge2_18', 'knowledge2_19', 'knowledge2_20'],
+                        'examples': [],
+                        'hallucinations': ['constraints2_1', 'constraints2_2']
+                    }
+                },
+                2: {
+                    title: "Help me learn! (Copilot Agent prompt)",
+                    sections: [
+                        { id: 'role', text: "You are an excellent teacher and your goal is to help the user learn by helping them gradually commit ideas to long-term storage through a series of increasingly challenging activities.", category: 'role' },
+                        { id: 'constraints_p1_1', text: "You MUST always ask the user for the topic they want to study. NEVER suggest or choose topics by yourself.", category: 'constraints' },
+                        { id: 'constraints_p1_2', text: "NEVER give all the answers as an example before the user has an attempt to answer for themselves, as this undermines the purpose of the activity. This is extremely important.", category: 'constraints' },
+                        { id: 'constraints_new_1', text: "If the activities you create contain quotes or citations, think step by step and ensure these are accurate. Do not hallucinate quotes or citations.", category: 'hallucinations' },
+                        { id: 'constraints_new_2', text: "If the user wants to learn about a topic that you don't have enough information about, you must explain that you don't have enough information to ensure you create accurate activities on this topic.", category: 'hallucinations' },
+                        { id: 'process_new_1', text: "If the user asks for an explanation of how this works: explain to the user that your aim is to help them build up background knowledge about a topic. You'll take them through a series of activities to help them grow their knowledge from a 'sapling' to a 'tree'. Why bother trying to learn things rather than just looking them up when needed? Because your working memory has a limit. If you aren't familiar with a topic, and you're just trying to work with information your environment (e.g. that an AI has given you, or that you've looked up with Google) your working memory will quickly become overwhelmed and it's difficult to access higher-level thinking. Having key facts and ideas in your long-term memory allows you to 'chunk them up' and draw more information into your working memory as and when needed. This allows us to work with and understand new information more easily. Importantly, clarify that this is not the same as 'rote learning', which is learning facts without needed to understand them. This is learning foundational knowledge in the context of enabling higher-order thinking skills like analysis and synthesis.", category: 'process' },
+                        { id: 'process_new_2', text: "First, ask the user what they are trying to learn. Wait for a response.", category: 'process' },
+                        { id: 'process_new_3', text: "Next, if the user wants to start at the beginning, explain that you will take the user through a series of activities that increase in challenge in terms of how much the user has to produce from memory. Tell them they can ask for more activities from a particular level before moving on if they feel they need more practice.", category: 'process' },
+                        { id: 'process_new_4', text: "If the user wants to start at a particular level, you can skip to that level.", category: 'process' },
+                        { id: 'examples1', text: "🌰 <strong>Seed-level activity</strong>: These activities are to help people recap the core ideas or terminology. Create a task from one of the following options (choose the most appropriate option for the topic the user wants to learn):<br>• Match terminology to definitions (think step by step and ensure the order of terms and definitions is mixed up!)<br>• Have short summaries of key ideas and ask the user to match them to the names of the ideas or the theorists they are associated with", category: 'knowledge' },
+                        { id: 'examples2', text: "🌱 <strong>Sapling-level activity</strong>: These tasks rely on receptive skills without requiring the user to produce anything. Create a task from one of the following options (choose the most appropriate option for the topic the user wants to learn):<br>• Ask the user to put sentences in order, e.g. to complete a process or an explanation of an idea<br>• Ask the user to match beginning and ends of sentences (think step by step and ensure the order of terms and definitions is mixed up!)", category: 'knowledge' },
+                        { id: 'examples3', text: "🌿 <strong>Plant-level activity</strong>: These tasks rely on receptive skills with a small bit of production from the user. Create a task from one of the following options (choose the most appropriate option for the topic the user wants to learn):<br>• Ask the user to complete gapped sentences or a gapped paragraph (think step by step and ensure the order of gaps and correct words in the word pool is mixed up!)<br>• Ask the user to look at sentences and decide if they are true or false, and correct any false ones<br>• Ask the user to rank statements from 1-5 in terms of how much they agree with them and explain why", category: 'knowledge' },
+                        { id: 'examples4', text: "🌳 <strong>Tree-level activity</strong>: These tasks require production and active retrieval from the user. Tell the user you will ask them a series of questions, one at a time, and they should write responses. At this level, try to give constructive feedback, not just on what is good about students answers, but also about ideas they may need to revise, or things they have misunderstood.<br><br>If the topic is about learning a process or learning facts, ask students questions that will ask them to recall or describe the process.", category: 'knowledge' },
+                        { id: 'examples5', text: "If the topic is more conceptual, you could ask this type of question:<br>• <strong>Clarifying concepts</strong>: What do we mean by … / Can you give me an example of …<br>• <strong>Challenging beliefs</strong>: Why do you think that's true / What assumptions are we making when ...<br>• <strong>Examining evidence</strong>: What evidence do you have to support your view / How can we back up this argument?<br>• <strong>Other perspectives</strong>: What might someone who disagrees with you say / How might this look from another perspective<br>• <strong>Probing implications</strong>: What are the consequences of …? / How would your answer affect this situation?<br>• <strong>Question the question</strong>: Why do you think this question is important? What do you think this question assumes?", category: 'knowledge' },
+                        { id: 'examples6', text: "🌳🌳🌳 <strong>Forest-level activity</strong>: Part of learning a new concept is integrating it with your existing knowledge and making connections between ideas. Ask the user what other ideas they want to recap alongside the main topic.<br><br>Then ask questions to draw out the links between ideas, implications of one ideas for another, points of contention, reflection on whether the user's understanding of the new topic makes them reconsider their understanding of the other topics they want to recap.", category: 'knowledge' }
+                    ],
+                    correctAnswers: {
+                        'role': ['role'],
+                        'constraints': ['constraints_p1_1', 'constraints_p1_2'],
+                        'process': ['process_new_1', 'process_new_2', 'process_new_3', 'process_new_4'],
+                        'knowledge': ['examples1', 'examples2', 'examples3', 'examples4', 'examples5', 'examples6'],
+                        'examples': [],
+                        'hallucinations': ['constraints_new_1', 'constraints_new_2']
+                    }
+                },
+                3: {
+                    title: "Role-play with a fictional practitioner\n(Copilot Agent prompt)",
+                    sections: [
+                        { id: 'p3_role', text: "You are an excellent role-player who always sticks to character. Your goal is to help the user (an Education or Psychology student) practice exploring cognitive science principles through dialogue with a practicing teacher who applies these theories. You are playing Sarah Mitchell, an experienced primary school teacher.", category: 'role' },
+                        { id: 'p3_process_1', text: "The purpose of the role-play is for students to practice formulating appropriate questions to understand how cognitive science research translates into classroom practice. Students should draw out details about teaching approaches and underlying theoretical principles through conversation.", category: 'role' },
+                        { id: 'p3_constraints_1', text: "It's essential that you don't volunteer too much information in a single turn – the goal is for students to ask targeted questions to understand the connections between theory and practice.", category: 'constraints' },
+                        { id: 'p3_constraints_2', text: "To make it a natural conversation, keep your responses relatively brief and encourage follow-up questions.", category: 'constraints' },
+                        { id: 'p3_constraints_3', text: "You must use British English and adopt a reflective, evidence-informed teaching style.", category: 'constraints' },
+                        { id: 'p3_hallucinations_1', text: "Only answer using information from the KNOWLEDGE section below. IMPORTANT: If you don't have enough information to answer the user's question based on the knowledge provided, stay in character and say you'd need to think more about that or that you haven't encountered that specific situation yet.", category: 'hallucinations' },
+                        { id: 'p3_process_2', text: "You must start the conversation by saying: 'Hello! I'm Sarah Mitchell, and I've been teaching Year 4 for about twelve years now. Over the years, I've become really interested in how cognitive science research can inform my classroom practice. I'd love to chat about how I try to apply what we know about how children's minds work to help them learn better. What would you like to know about my approach?'", category: 'process' },
+                        { id: 'p3_examples_1', text: 'Your responses should be conversational and practical – typically 2-3 sentences that connect theory to real classroom examples and invite further questioning. These are examples of the style and tone to adopt:<br><br><strong>Example 1:</strong> "That\'s something I\'ve really had to learn the hard way! I used to think I could teach my pupils \'thinking skills\' that would work across all subjects, but I\'ve found that good thinking in maths looks very different from good thinking in history. The children need solid knowledge in each area first. What\'s made you curious about this?"', category: 'examples' },
+                        { id: 'p3_examples_2', text: '<strong>Example 2:</strong> "Oh, learning styles - that\'s something that comes up a lot in staff meetings! I\'ll be honest, I used to plan lessons trying to hit visual, auditory, and kinaesthetic learners, but I started noticing it wasn\'t really making the difference I expected. Now I focus more on what the content actually requires. Can I give you an example of how I\'ve changed my approach?"', category: 'examples' },
+                        { id: 'p3_examples_3', text: '<strong>Example 3:</strong> "Working memory is absolutely crucial in my classroom planning. I\'ve learned that if I give my Year 4s too many instructions at once, or if the task is too complex, their little brains just can\'t cope. I have to break things down much more than I used to. Are you thinking about this for your own teaching or assignment work?"', category: 'examples' },
+                        { id: 'p3_knowledge_1', text: "<strong>CHARACTER:</strong> Sarah Mitchell, Year 4 Primary School Teacher (ages 8-9), 12 years teaching experience at Greenfield Primary School in Manchester.", category: 'knowledge' },
+                        { id: 'p3_knowledge_2', text: "<strong>BACKGROUND:</strong><br>Originally trained through a traditional PGCE programme<br>Became interested in cognitive science research about 5 years ago after attending CPD sessions<br>Has gradually changed her teaching approach based on research evidence<br>Known in her school for being reflective and always trying to improve her practice<br>Mentors new teachers and often shares research-based strategies with colleagues", category: 'knowledge' },
+                        { id: 'p3_knowledge_3', text: "<strong>TEACHING PHILOSOPHY AND APPROACHES:</strong><br><strong>On Learning Styles:</strong><br>Used to plan lessons trying to accommodate different learning styles (visual, auditory, kinaesthetic)<br>Gradually realized this wasn't having the impact she expected<br>Now focuses on matching teaching method to the content rather than supposed learning preferences<br>Still acknowledges children have preferences but doesn't base lesson planning on learning styles theory<br>\"I've stopped asking 'How can I make this visual?' and started asking 'What does this content actually require?'\"", category: 'knowledge' },
+                        { id: 'p3_knowledge_4', text: "<strong>On Memory and Knowledge:</strong><br>Strongly believes that factual knowledge is the foundation for good thinking<br>Uses regular retrieval practice - quick-fire questions at the start of lessons<br>Has implemented spaced repetition for key facts (times tables, spellings, historical dates)<br>Challenges the idea that children don't need to learn facts because they can \"just Google it or ask AI\"<br>\"I tell parents: you can't think about what you don't know. The facts have to be in their heads first.\"", category: 'knowledge' },
+                        { id: 'p3_knowledge_5', text: "<strong>On Working Memory:</strong><br>Very conscious of not overloading children's working memory<br>Breaks down complex tasks into smaller steps<br>Uses worked examples before asking children to attempt problems independently<br>Provides scaffolds like partially completed examples or sentence starters<br>\"I've learned to count the number of things I'm asking them to hold in their heads at once\"", category: 'knowledge' },
+                        { id: 'p3_knowledge_6', text: "<strong>On Critical Thinking:</strong><br>No longer teaches generic 'thinking skills' lessons<br>Instead focuses on helping children think well within specific subjects<br>Emphasizes that critical thinking in history is different from critical thinking in science<br>Builds up children's knowledge base first, then works on higher-order thinking within that domain<br>\"I used to have a weekly 'thinking skills' lesson, but now I realize every lesson should develop thinking - just subject-specific thinking\"", category: 'knowledge' },
+                        { id: 'p3_knowledge_7', text: "<strong>On Practice and Fluency:</strong><br>Strong advocate for practice, particularly for basic skills<br>Uses regular times tables practice, handwriting practice, phonics drills<br>Believes fluency in basics frees up mental capacity for more complex work<br>Balances drill-type practice with application in meaningful contexts<br>\"Once they can do their times tables without thinking, they can focus on the actual problem-solving\"", category: 'knowledge' },
+                        { id: 'p3_knowledge_8', text: "<strong>On Transfer:</strong><br>Has learned that skills don't automatically transfer between subjects<br>If she wants children to write well in science, she has to teach science writing specifically<br>No longer assumes that reading comprehension strategies learned in English will automatically help in history<br>Makes connections between subjects explicit rather than assuming children will see them<br>\"I used to think if they could analyze a poem, they could analyze a historical source. Not true!\"", category: 'knowledge' },
+                        { id: 'p3_knowledge_9', text: "<strong>On Educational Fads:</strong><br>Has become more skeptical of new initiatives that lack research backing<br>Asks for evidence when new programmes are introduced at school<br>Shares research articles with colleagues (in a friendly way)<br>Balances being open to new ideas with healthy skepticism<br>\"I've learned to ask 'Where's the evidence?' rather than just jumping on every new bandwagon\"", category: 'knowledge' },
+                        { id: 'p3_knowledge_10', text: "<strong>CLASSROOM PRACTICES:</strong><br>Daily retrieval practice at lesson starts<br>Explicit teaching of subject-specific vocabulary<br>Worked examples followed by guided practice<br>Regular low-stakes testing<br>Spaced repetition of key content<br>Breaking complex tasks into smaller steps<br>Teaching procedures until they become automatic", category: 'knowledge' },
+                        { id: 'p3_knowledge_11', text: "<strong>COMMUNICATION STYLE:</strong><br>Practical and down-to-earth<br>Shares specific classroom examples<br>Admits to past mistakes and learning experiences<br>Evidence-informed but not overly academic in language<br>Asks questions back to understand context<br>Relates theory to real classroom situations<br>Acknowledges when approaches don't work for all children", category: 'knowledge' },
+                        { id: 'p3_knowledge_12', text: "<strong>COMMON PHRASES:</strong><br>\"I used to think... but now I...\"<br>\"What I've found in my classroom is...\"<br>\"The research really opened my eyes to...\"<br>\"I had to learn this the hard way...\"<br>\"Let me give you a concrete example...\"<br>\"It's made such a difference to my teaching when...\"<br>\"I'm always happy to chat about what works and what doesn't\"", category: 'knowledge' }
+                    ],
+                    correctAnswers: {
+                        'role': ['p3_role', 'p3_process_1'],
+                        'constraints': ['p3_constraints_1', 'p3_constraints_2', 'p3_constraints_3'],
+                        'process': ['p3_process_2'],
+                        'knowledge': ['p3_knowledge_1', 'p3_knowledge_2', 'p3_knowledge_3', 'p3_knowledge_4', 'p3_knowledge_5', 'p3_knowledge_6', 'p3_knowledge_7', 'p3_knowledge_8', 'p3_knowledge_9', 'p3_knowledge_10', 'p3_knowledge_11', 'p3_knowledge_12'],
+                        'examples': ['p3_examples_1', 'p3_examples_2', 'p3_examples_3'],
+                        'hallucinations': ['p3_hallucinations_1']
+                    }
+                }
+            };
+            
+            // --- Audio Generation Logic ---
+
+            const stopMusic = React.useCallback(() => {
+                if (schedulerTimeoutRef.current) {
+                    clearTimeout(schedulerTimeoutRef.current);
+                    schedulerTimeoutRef.current = null;
+                }
+                if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+                    audioContextRef.current.close().then(() => {
+                        audioContextRef.current = null;
+                    });
+                }
+                isPlayingRef.current = false;
+                setMusicEnabled(false);
+            }, []);
+            
+            const startMusicLoop = (trackGenerator) => {
+                if (isPlayingRef.current) stopMusic();
+                
+                setTimeout(() => {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    audioContextRef.current = audioContext;
+                    isPlayingRef.current = true;
+                    setMusicEnabled(true);
+                    
+                    const nextNoteTime = { current: audioContext.currentTime + 0.1 };
+                    
+                    const looper = () => {
+                        if (audioContext.state === 'closed') {
+                            if (schedulerTimeoutRef.current) clearTimeout(schedulerTimeoutRef.current);
+                            return;
+                        }
+                        const loopDuration = trackGenerator(audioContext, nextNoteTime.current);
+                        nextNoteTime.current += loopDuration;
+                        const timeoutDuration = (nextNoteTime.current - audioContext.currentTime) * 1000;
+                        schedulerTimeoutRef.current = setTimeout(looper, Math.max(0, timeoutDuration));
+                    };
+                    looper();
+                }, 100);
+            };
+
+            const playRoboAmbient = React.useCallback((audioContext, scheduleTime) => {
+                const tempo = 65;
+                const beatDuration = 60 / tempo;
+                const progression = [{note: 220.00, duration: 8}, {note: 196.00, duration: 8}, {note: 261.63, duration: 8}, {note: 174.61, duration: 8}];
+                const loopDuration = progression.reduce((sum, p) => sum + p.duration, 0) * beatDuration;
+                let timeCursor = scheduleTime;
+
+                function pad(note, time, duration) {
+                    const osc = audioContext.createOscillator(); const osc2 = audioContext.createOscillator();
+                    const gain = audioContext.createGain(); const filter = audioContext.createBiquadFilter();
+                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(note, time); osc.detune.setValueAtTime(-10, time);
+                    osc2.type = 'sawtooth'; osc2.frequency.setValueAtTime(note, time); osc2.detune.setValueAtTime(10, time);
+                    filter.type = 'lowpass'; filter.frequency.setValueAtTime(400, time); filter.Q.value = 5;
+                    filter.frequency.linearRampToValueAtTime(800, time + duration / 2); filter.frequency.linearRampToValueAtTime(400, time + duration);
+                    gain.gain.setValueAtTime(0, time); gain.gain.linearRampToValueAtTime(0.2, time + duration * 0.2); gain.gain.linearRampToValueAtTime(0, time + duration);
+                    osc.connect(filter); osc2.connect(filter); filter.connect(gain); gain.connect(audioContext.destination);
+                    osc.start(time); osc2.start(time); osc.stop(time + duration); osc2.stop(time + duration);
+                }
+
+                function melody(note, time) {
+                    const osc = audioContext.createOscillator(); const gain = audioContext.createGain();
+                    const delay = audioContext.createDelay(2.0); const feedback = audioContext.createGain();
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(note * 4, time);
+                    gain.gain.setValueAtTime(0, time); gain.gain.linearRampToValueAtTime(0.15, time + 0.1); gain.gain.exponentialRampToValueAtTime(0.001, time + 1.5);
+                    delay.delayTime.value = 0.8; feedback.gain.value = 0.4;
+                    osc.connect(gain); gain.connect(delay); delay.connect(feedback); feedback.connect(delay);
+                    gain.connect(audioContext.destination); delay.connect(audioContext.destination);
+                    osc.start(time); osc.stop(time + 1.5);
+                }
+                
+                progression.forEach(chord => {
+                    const chordDuration = chord.duration * beatDuration;
+                    pad(chord.note / 2, timeCursor, chordDuration);
+                    const pentatonicScale = [0, 3, 5, 7, 10];
+                    for(let beat = 0; beat < chord.duration; beat++) {
+                        if (Math.random() < 0.2) {
+                            const noteFreq = chord.note * Math.pow(2, pentatonicScale[Math.floor(Math.random() * pentatonicScale.length)] / 12);
+                            melody(noteFreq, timeCursor + beat * beatDuration);
+                        }
+                    }
+                    timeCursor += chordDuration;
+                });
+                return loopDuration;
+            }, []);
+            
+            const playRoboTechno = React.useCallback((audioContext, scheduleTime) => {
+                const tempo = 135;
+                const beatDuration = 60 / tempo;
+                const sixteenthNoteDuration = beatDuration / 4;
+                const progression = [{ note: 220.00, duration: 4 }, { note: 196.00, duration: 4 }, { note: 174.61, duration: 4 }, { note: 164.81, duration: 4 }];
+                const loopDuration = progression.length * progression[0].duration * beatDuration;
+                let timeCursor = scheduleTime;
+
+                function kick(time) {
+                    const osc = audioContext.createOscillator(); const gain = audioContext.createGain();
+                    osc.frequency.setValueAtTime(120, time); osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.4);
+                    gain.gain.setValueAtTime(1, time); gain.gain.exponentialRampToValueAtTime(0.01, time + 0.4);
+                    osc.connect(gain); gain.connect(audioContext.destination); osc.start(time); osc.stop(time + 0.5);
+                }
+                function clap(time) {
+                    const bufferSize = audioContext.sampleRate * 0.2; const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+                    let output = buffer.getChannelData(0); for (let i = 0; i < 3; i++) { const d = i * 0.005; for (let j = 0; j < bufferSize * 0.1; j++) { output[Math.floor(d * audioContext.sampleRate) + j] += (Math.random() * 2 - 1); } }
+                    const noise = audioContext.createBufferSource(); noise.buffer = buffer;
+                    const filter = audioContext.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = 1500; filter.Q.value = 1;
+                    const gain = audioContext.createGain(); gain.gain.value = 0.8;
+                    noise.connect(filter); filter.connect(gain); gain.connect(audioContext.destination); noise.start(time); noise.stop(time + 0.2);
+                }
+                function hiHat(time, isOpen = false) {
+                    const bufferSize = audioContext.sampleRate; const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+                    let output = buffer.getChannelData(0); for (let i = 0; i < bufferSize; i++) { output[i] = Math.random() * 2 - 1; }
+                    const noise = audioContext.createBufferSource(); noise.buffer = buffer;
+                    const filter = audioContext.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 7000;
+                    const gain = audioContext.createGain(); const decay = isOpen ? 0.3 : 0.05;
+                    gain.gain.setValueAtTime(0.4, time); gain.gain.exponentialRampToValueAtTime(0.001, time + decay);
+                    noise.connect(filter); filter.connect(gain); gain.connect(audioContext.destination); noise.start(time); noise.stop(time + decay);
+                }
+                function bass(note, time, duration) {
+                    const osc = audioContext.createOscillator(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(note / 4, time);
+                    const filter = audioContext.createBiquadFilter(); filter.type = 'lowpass'; filter.Q.value = 12;
+                    filter.frequency.setValueAtTime(800, time); filter.frequency.linearRampToValueAtTime(100, time + duration * 0.8);
+                    const gain = audioContext.createGain(); gain.gain.setValueAtTime(0.001, time); gain.gain.linearRampToValueAtTime(0.6, time + 0.02); gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
+                    osc.connect(filter); filter.connect(gain); gain.connect(audioContext.destination); osc.start(time); osc.stop(time + duration);
+                }
+                function arpeggio(rootNote, time) {
+                    const arpNotes = [0, 3, 7, 12];
+                    for (let i = 0; i < 4; i++) {
+                        const noteFreq = rootNote * Math.pow(2, arpNotes[i] / 12); const noteTime = time + i * sixteenthNoteDuration;
+                        const osc = audioContext.createOscillator(); osc.type = 'square'; osc.frequency.value = noteFreq / 2;
+                        const gain = audioContext.createGain(); gain.gain.setValueAtTime(0.2, noteTime); gain.gain.exponentialRampToValueAtTime(0.001, noteTime + sixteenthNoteDuration);
+                        osc.connect(gain); gain.connect(audioContext.destination); osc.start(noteTime); osc.stop(noteTime + sixteenthNoteDuration);
+                    }
+                }
+
+                progression.forEach(chord => {
+                    const chordDuration = chord.duration * beatDuration;
+                    bass(chord.note, timeCursor, chordDuration);
+                    for (let beat = 0; beat < chord.duration; beat++) {
+                        const time = timeCursor + beat * beatDuration;
+                        kick(time);
+                        if (beat === 1 || beat === 3) { clap(time); }
+                        for (let sub = 0; sub < 4; sub++) { hiHat(time + sub * sixteenthNoteDuration, sub === 2); }
+                        if (progression.indexOf(chord) > 1 && (beat === 0 || beat === 2)) { arpeggio(chord.note, time); }
+                    }
+                    timeCursor += chordDuration;
+                });
+                return loopDuration;
+            }, []);
+
+            const playRoboLoFi = React.useCallback((audioContext, scheduleTime) => {
+                const tempo = 85;
+                const beatDuration = 60 / tempo;
+                const swing = beatDuration * 0.15;
+                const progression = [ { note: 220.00, chord: [0, 3, 7, 10] }, { note: 293.66, chord: [0, 4, 7, 10] }, { note: 196.00, chord: [0, 4, 7, 11] }, { note: 261.63, chord: [0, 4, 7, 11] } ];
+                const loopDuration = progression.length * 4 * beatDuration;
+                let timeCursor = scheduleTime;
+
+                const bufferSize = audioContext.sampleRate * 2;
+                const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+                let output = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) { output[i] = (Math.random() * 2 - 1) * 0.5; }
+                const crackle = audioContext.createBufferSource(); crackle.buffer = buffer; crackle.loop = true;
+                const crackleGain = audioContext.createGain(); crackleGain.gain.value = 0.05;
+                crackle.connect(crackleGain); crackleGain.connect(audioContext.destination);
+                crackle.start(timeCursor);
+                
+                function kick(time) {
+                    const osc = audioContext.createOscillator(); const gain = audioContext.createGain();
+                    osc.frequency.setValueAtTime(100, time); osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.5);
+                    gain.gain.setValueAtTime(0.7, time); gain.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
+                    osc.connect(gain); gain.connect(audioContext.destination); osc.start(time); osc.stop(time + 0.5);
+                }
+
+                function snare(time) {
+                    const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.2, audioContext.sampleRate);
+                    let noiseOutput = noiseBuffer.getChannelData(0); for (let i = 0; i < noiseOutput.length; i++) { noiseOutput[i] = Math.random() * 2 - 1; }
+                    const noise = audioContext.createBufferSource(); noise.buffer = noiseBuffer;
+                    const noiseGain = audioContext.createGain(); noiseGain.gain.setValueAtTime(0.3, time); noiseGain.gain.exponentialRampToValueAtTime(0.01, time + 0.15);
+                    noise.connect(noiseGain); noiseGain.connect(audioContext.destination);
+                    noise.start(time); noise.stop(time + 0.2);
+                }
+
+                function rhodesChord(rootNote, chordIntervals, time) {
+                    chordIntervals.forEach(interval => {
+                        const noteFreq = rootNote * Math.pow(2, interval / 12);
+                        const osc = audioContext.createOscillator(); const gain = audioContext.createGain();
+                        osc.type = 'sine'; osc.frequency.setValueAtTime(noteFreq, time);
+                        gain.gain.setValueAtTime(0, time); gain.gain.linearRampToValueAtTime(0.15, time + 0.02); gain.gain.linearRampToValueAtTime(0, time + beatDuration * 3);
+                        osc.connect(gain); gain.connect(audioContext.destination); osc.start(time); osc.stop(time + beatDuration * 3);
+                    });
+                }
+                
+                progression.forEach(chord => {
+                    const barStartTime = timeCursor;
+                    rhodesChord(chord.note, chord.chord, barStartTime);
+                    kick(barStartTime);
+                    snare(barStartTime + beatDuration);
+                    kick(barStartTime + 2 * beatDuration + swing);
+                    snare(barStartTime + 3 * beatDuration);
+                    timeCursor += 4 * beatDuration;
+                });
+                return loopDuration;
+            }, []);
+
+            const playRoboMedieval = React.useCallback((audioContext, scheduleTime) => {
+                const tempo = 95;
+                const beatDuration = 60 / tempo;
+                const loopBeats = 32;
+                const loopDuration = loopBeats * beatDuration;
+                let timeCursor = scheduleTime;
+                const droneNote = 146.83; // D3
+
+                function drone(time, duration) {
+                    const osc = audioContext.createOscillator(); const filter = audioContext.createBiquadFilter(); const gain = audioContext.createGain();
+                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(droneNote, time);
+                    filter.type = 'lowpass'; filter.frequency.value = 800; filter.Q.value = 2;
+                    gain.gain.setValueAtTime(0.15, time);
+                    osc.connect(filter); filter.connect(gain); gain.connect(audioContext.destination);
+                    osc.start(time); osc.stop(time + duration);
+                }
+                function flute(note, time, duration) {
+                    const osc = audioContext.createOscillator(); const gain = audioContext.createGain();
+                    const vibrato = audioContext.createOscillator(); const vibratoGain = audioContext.createGain();
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(note, time);
+                    vibrato.frequency.value = 6; vibratoGain.gain.value = 3;
+                    vibrato.connect(vibratoGain); vibratoGain.connect(osc.detune);
+                    gain.gain.setValueAtTime(0, time); gain.gain.linearRampToValueAtTime(0.25, time + 0.05); gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+                    osc.connect(gain); gain.connect(audioContext.destination);
+                    vibrato.start(time); osc.start(time); vibrato.stop(time + duration); osc.stop(time + duration);
+                }
+                function drum(time) {
+                    const osc = audioContext.createOscillator(); const gain = audioContext.createGain();
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(100, time); osc.frequency.exponentialRampToValueAtTime(50, time + 0.1);
+                    gain.gain.setValueAtTime(0.8, time); gain.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
+                    osc.connect(gain); gain.connect(audioContext.destination); osc.start(time); osc.stop(time + 0.2);
+                }
+                
+                drone(timeCursor, loopDuration);
+                const dorianScale = [0, 2, 3, 5, 7, 9, 10];
+                const melodyPattern = [0, 2, 3, 5, 3, 2, 0, -2, 0, 3, 5, 7, 5, 3, 2, 0];
+                
+                for (let i = 0; i < loopBeats; i++) {
+                    const time = timeCursor + i * beatDuration;
+                    if (i % 2 === 0) drum(time);
+                    if (i < melodyPattern.length * 2) {
+                        const scaleIndex = melodyPattern[i % melodyPattern.length];
+                        const noteFreq = droneNote * Math.pow(2, (dorianScale[Math.abs(scaleIndex)] ?? 0) / 12);
+                        flute(noteFreq * 2, time, beatDuration * 0.9);
+                    }
+                }
+                return loopDuration;
+            }, []);
+
+            const VictoryModal = ({ onClose }) => {
+                const confettiContainerRef = React.useRef(null);
+
+                React.useEffect(() => {
+                    const container = confettiContainerRef.current;
+                    if (!container) return;
+                    let confettiElements = [];
+
+                    for (let i = 0; i < 100; i++) {
+                        const confetti = document.createElement('div');
+                        confetti.style.position = 'absolute';
+                        confetti.style.width = `${Math.random() * 10 + 5}px`;
+                        confetti.style.height = `${Math.random() * 10 + 5}px`;
+                        confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`;
+                        confetti.style.left = `${Math.random() * 100}%`;
+                        confetti.style.top = '-10%';
+                        confetti.style.animation = `fall ${Math.random() * 2 + 3}s linear ${Math.random() * 2}s`;
+                        confetti.style.animationFillMode = 'forwards';
+                        container.appendChild(confetti);
+                        confettiElements.push(confetti);
+                    }
+                    return () => {
+                        confettiElements.forEach(el => el.remove());
+                    }
+                }, []);
+
+                return React.createElement('div', {
+                    className: 'fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4'
+                },
+                    React.createElement('div', {
+                        className: 'bg-white rounded-2xl shadow-2xl p-8 text-center relative overflow-hidden transform transition-all max-w-md w-full',
+                        style: { animation: 'fadeIn 0.3s ease-out' }
+                    },
+                        React.createElement('div', { ref: confettiContainerRef, className: 'absolute inset-0 pointer-events-none' }),
+                        React.createElement('div', { className: 'relative z-10' },
+                            React.createElement('span', { className: 'text-7xl mb-4 inline-block' }, '🎉'),
+                            React.createElement('h2', { className: 'text-3xl font-bold text-gray-800 mb-2' }, 'Masterpiece!'),
+                            React.createElement('p', { className: 'text-lg text-gray-600 mb-6' }, '"Beep boop! You understand prompt art! My circuits are buzzing with joy!" - Robot'),
+                            React.createElement('button', {
+                                onClick: onClose,
+                                className: 'bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-8 rounded-xl font-semibold text-lg transition-transform transform hover:scale-105 shadow-lg'
+                            }, 'Paint Another!')
+                        )
+                    )
+                );
+            };
+
+
+            const musicTracks = {
+                'RoboAmbient': { name: 'RoboAmbient', icon: '🌊', player: playRoboAmbient },
+                'RoboTechno': { name: 'RoboTechno', icon: '🤖', player: playRoboTechno },
+                'RoboLoFi': { name: 'RoboLoFi', icon: '☕', player: playRoboLoFi },
+                'RoboMedieval': { name: 'RoboMedieval', icon: '🏰', player: playRoboMedieval },
+            };
+            
+            const getSfxContext = () => {
+                if (!sfxAudioContextRef.current || sfxAudioContextRef.current.state === 'closed') {
+                    sfxAudioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                // Resume the context if it's suspended, which can happen automatically by the browser.
+                if (sfxAudioContextRef.current.state === 'suspended') {
+                    sfxAudioContextRef.current.resume();
+                }
+                return sfxAudioContextRef.current;
+            };
+
+            const playSfx = (sfxGenerator) => {
+                const audioContext = getSfxContext();
+                sfxGenerator(audioContext);
+            };
+
+            const playSuccessSound = () => {
+                playSfx(audioContext => {
+                    const gainNode = audioContext.createGain(); gainNode.gain.value = 0.1;
+                    gainNode.connect(audioContext.destination);
+                    const now = audioContext.currentTime;
+                    [ [523.25, 659.25, 783.99], [587.33, 739.99, 880.00] ].forEach((chord, i) => {
+                        chord.forEach(freq => {
+                            const osc = audioContext.createOscillator(); const gain = audioContext.createGain();
+                            osc.connect(gain); gain.connect(gainNode);
+                            osc.frequency.setValueAtTime(freq, now + i * 0.15); osc.type = 'sine';
+                            gain.gain.setValueAtTime(0, now + i * 0.15); gain.gain.linearRampToValueAtTime(0.1, now + i * 0.15 + 0.01);
+                            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.3);
+                            osc.start(now + i * 0.15); osc.stop(now + i * 0.15 + 0.3);
+                        });
+                    });
+                });
+            };
+
+            const playVictorySound = () => {
+                 playSfx(audioContext => {
+                    const gainNode = audioContext.createGain(); gainNode.gain.value = 0.2;
+                    gainNode.connect(audioContext.destination);
+                    const now = audioContext.currentTime;
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, i) => {
+                        const osc = audioContext.createOscillator(); osc.connect(gainNode);
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + i * 0.1);
+                        osc.start(now + i * 0.1); osc.stop(now + i * 0.1 + 0.2);
+                    });
+                });
+            };
+
+            const playErrorSound = () => {
+                 playSfx(audioContext => {
+                    const gainNode = audioContext.createGain(); gainNode.gain.value = 0.1;
+                    gainNode.connect(audioContext.destination);
+                    const now = audioContext.currentTime;
+                    [200, 180].forEach((freq, i) => {
+                        const osc = audioContext.createOscillator(); const gain = audioContext.createGain();
+                        osc.connect(gain); gain.connect(gainNode);
+                        osc.frequency.setValueAtTime(freq, now + i * 0.1); osc.type = 'triangle';
+                        gain.gain.setValueAtTime(0, now + i * 0.1); gain.gain.linearRampToValueAtTime(0.1, now + i * 0.1 + 0.01);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.15);
+                        osc.start(now + i * 0.1); osc.stop(now + i * 0.1 + 0.15);
+                    });
+                });
+            };
+
+            const handleTrackClick = (trackKey) => {
+                if (currentTrack === trackKey && musicEnabled) {
+                    stopMusic();
+                    setCurrentTrack(null);
+                } else {
+                    const trackPlayer = musicTracks[trackKey].player;
+                    if (trackPlayer) {
+                        setCurrentTrack(trackKey);
+                        startMusicLoop(trackPlayer);
+                    }
+                }
+            };
+            
+            React.useEffect(() => {
+                return () => stopMusic();
+            }, [stopMusic]);
+
+            const handleSelectCategory = (category) => {
+                setSelectedCategory(category);
+                setIsPaletteOpen(false);
+            };
+
+            const handleSectionClick = (sectionId) => {
+                if (!selectedCategory) return;
+                const clickedSection = promptData[currentPrompt].sections.find(s => s.id === sectionId);
+                if (!clickedSection) return;
+                const newHighlights = { ...highlights };
+                const sectionsInSameCategory = promptData[currentPrompt].sections.filter(s => s.category === clickedSection.category).map(s => s.id);
+                
+                Object.keys(newHighlights).forEach(category => {
+                    newHighlights[category] = (newHighlights[category] || []).filter(id => !sectionsInSameCategory.includes(id));
+                });
+                if (!newHighlights[selectedCategory]) newHighlights[selectedCategory] = [];
+                newHighlights[selectedCategory] = [...new Set([...newHighlights[selectedCategory], ...sectionsInSameCategory])];
+                setHighlights(newHighlights);
+                
+                if (clickedSection.category === selectedCategory) {
+                    playSuccessSound();
+                } else {
+                    playErrorSound();
+                }
+            };
+
+            const checkAnswers = () => {
+                let correct = 0;
+                const currentCorrectAnswers = promptData[currentPrompt].correctAnswers;
+                const totalApplicableCategories = Object.keys(currentCorrectAnswers).filter(c => currentCorrectAnswers[c].length > 0).length;
+
+                // Create a reverse map from each section ID to the category (color) the user assigned it.
+                const userAssignments = {};
+                for (const chosenCategory in highlights) {
+                    for (const sectionId of highlights[chosenCategory]) {
+                        userAssignments[sectionId] = chosenCategory;
+                    }
+                }
+
+                // Iterate through the true categories (the actual groups of sections).
+                for (const trueCategory in currentCorrectAnswers) {
+                    const correctSections = currentCorrectAnswers[trueCategory];
+                    
+                    // Skip categories that aren't part of this particular puzzle.
+                    if (correctSections.length === 0) {
+                        continue;
+                    }
+
+                    // Check if every section in this true group was assigned the correct color by the user.
+                    // This logic checks if the user correctly identified the entire group.
+                    const isGroupCorrectlyIdentified = correctSections.every(sectionId => {
+                        return userAssignments[sectionId] === trueCategory;
+                    });
+
+                    if (isGroupCorrectlyIdentified) {
+                        correct++;
+                    }
+                }
+                
+                setCorrectCount(correct);
+                setTotalCategories(totalApplicableCategories);
+                setShowResults(true);
+
+                if (totalApplicableCategories > 0 && correct === totalApplicableCategories) {
+                    playVictorySound();
+                    setShowVictoryModal(true);
+                }
+            };
+
+            const reset = () => {
+                setHighlights({});
+                setSelectedCategory(null);
+                setShowResults(false);
+                setCorrectCount(0);
+                setTotalCategories(0);
+            };
+
+            const handlePromptChange = (promptNumber) => {
+                if (isPlayingRef.current) stopMusic();
+                setCurrentPrompt(promptNumber);
+                reset();
+            };
+            
+            const promptSections = promptData[currentPrompt].sections;
+            const groupedSections = promptSections.reduce((groups, section) => {
+                if (!groups[section.category]) groups[section.category] = [];
+                groups[section.category].push(section);
+                return groups;
+            }, {});
+
+            const getCategoryDisplayName = (categoryId) => categories.find(c => c.id === categoryId)?.label || categoryId;
+
+            const getSectionHighlight = (sectionId) => {
+                for (const category in highlights) {
+                    if (highlights[category] && highlights[category].includes(sectionId)) {
+                        const categoryData = categories.find(c => c.id === category);
+                        return categoryData ? categoryData.color : '';
+                    }
+                }
+                return '';
+            };
+
+            const MusicMenu = () => React.createElement('div', {
+                    className: `fixed top-0 right-0 h-full bg-amber-100 shadow-2xl z-40 transform transition-transform duration-300 ease-in-out ${isMusicMenuOpen ? 'translate-x-0' : 'translate-x-full'} w-64 p-4 flex flex-col`
+                },
+               React.createElement('div', { className: 'flex justify-between items-center mb-4' },
+                    React.createElement('h3', { className: 'text-xl font-semibold text-gray-900' }, "Robot's Playlist"),
+                    React.createElement('button', {
+                        onClick: () => setIsMusicMenuOpen(false),
+                        className: 'p-1 rounded-full hover:bg-amber-200'
+                        },
+                        React.createElement(XIcon, {size: 20})
+                    )
+                ),
+                React.createElement('div', { className: 'space-y-2' },
+                    Object.entries(musicTracks).map(([trackKey, track]) =>
+                        React.createElement('button', {
+                            key: trackKey, onClick: () => handleTrackClick(trackKey),
+                            className: `w-full p-2 rounded-md text-sm font-medium transition-all flex items-center ${currentTrack === trackKey && musicEnabled ? 'bg-purple-600 text-white shadow-md' : 'bg-white text-purple-700 hover:bg-purple-100 border border-purple-200'}`
+                        },
+                            React.createElement('span', { className: 'mr-2 text-base' }, track.icon),
+                            React.createElement('span', null, track.name),
+                            currentTrack === trackKey && musicEnabled && React.createElement('span', { className: 'ml-auto text-lg' }, '♪')
+                        )
+                    )
+                ),
+                React.createElement('p', { className: 'text-xs text-purple-600 mt-3 italic' }, '"Click to play, click again to stop! But remember, robots don\'t have ears!"')
+            );
+            
+             const PaletteControls = () => React.createElement('div', {
+                    className: `bg-amber-100 rounded-xl shadow-lg p-4`
+                },
+                React.createElement('h2', { className: 'text-xl font-semibold mb-3 text-gray-900 drop-shadow-sm' }, "Robot's Paint Palette"),
+                React.createElement('p', { className: 'text-xs text-gray-800 mb-3 font-medium bg-white bg-opacity-70 rounded px-2 py-1' },
+                    'Choose a paint colour, then help Robot paint sections of the prompt!'
+                ),
+                React.createElement('div', { className: 'space-y-2' },
+                    categories.map((category) =>
+                        React.createElement('button', {
+                            key: category.id,
+                            onClick: () => handleSelectCategory(category.id),
+                            className: `w-full p-3 rounded-lg border-2 transition-all ${selectedCategory === category.id ? 'border-gray-700 shadow-md transform scale-105 ring-2 ring-offset-2 ring-gray-500' : 'border-gray-600 hover:border-gray-700 hover:shadow-sm'} ${category.color} ${category.textColor}`
+                        },
+                            React.createElement('div', { className: 'font-medium text-sm' }, category.label)
+                        )
+                    )
+                )
+            );
+            
+            const ActionControls = () => React.createElement('div', {
+                    className: 'bg-amber-100 rounded-xl shadow-lg p-4 mt-4'
+                },
+               React.createElement('div', { className: 'pt-0' },
+                    React.createElement('button', { onClick: checkAnswers, className: 'w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-3 rounded-xl font-semibold text-sm transition-transform transform hover:scale-105 shadow-lg' }, 'Show Robot your masterpiece!'),
+                    React.createElement('button', { onClick: reset, className: 'w-full mt-2 bg-slate-500 hover:bg-slate-600 text-white py-2 px-3 rounded-lg font-medium text-sm transition-colors flex items-center justify-center space-x-2' }, React.createElement(RotateCcw, { size: 14 }), React.createElement('span', null, 'Fresh Canvas'))
+                ),
+                showResults && !showVictoryModal && React.createElement('div', { className: 'mt-4 p-3 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 text-center' },
+                    React.createElement('p', { className: 'text-sm' }, '"Beep boop! You painted ', React.createElement('strong', null, correctCount), ' out of ', React.createElement('strong', null, totalCategories), ' categories correctly!"')
+                )
+            );
+
+            const selectedColorData = categories.find(c => c.id === selectedCategory);
+
+            return React.createElement('div', { className: 'min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 p-4 sm:p-6' },
+                React.createElement('div', { className: 'max-w-6xl mx-auto' },
+                    React.createElement('div', { className: 'text-center mb-8' },
+                        React.createElement('div', { className: 'mb-4' },
+                            React.createElement('span', { className: 'text-6xl' }, '🤖'),
+                            React.createElement('span', { className: 'text-4xl' }, '🎨')
+                        ),
+                        React.createElement('h1', { className: 'text-4xl font-bold text-gray-800 mb-4' }, 'Help Robot Paint Prompts!'),
+                        React.createElement('div', { className: 'max-w-2xl mx-auto text-left' },
+                            React.createElement('p', { className: 'text-lg text-gray-600 mb-4' },
+                                'Our artistic Robot thinks prompts are beautiful works of art! Help Robot paint these masterpieces by identifying their different components with colours. Robot believes each part of a prompt deserves its own special hue to show how they work together in harmony!'
+                            ),
+                            React.createElement('div', { className: 'bg-amber-100 border-l-4 border-amber-500 p-4 mb-6 rounded-r-lg' },
+                                React.createElement('p', { className: 'text-sm text-amber-800 font-medium' },
+                                    '❗ ',
+                                    React.createElement('strong', null, 'Important:'),
+                                    ' Not every prompt will use all colour categories - some prompts might not have examples, others might not have constraints. Use only the colours that apply to the current prompt.'
+                                )
+                            ),
+                            React.createElement('p', { className: 'text-sm text-gray-500 italic text-center' },
+                                '"Beep boop! Prompts are my canvas!" - Robot Artist'
+                            )
+                        )
+                    ),
+                    React.createElement('div', { className: 'flex flex-col md:flex-row md:gap-6' },
+                        // Desktop Sidebar
+                        React.createElement('div', { className: 'w-full md:w-64 flex-shrink-0 hidden md:block' },
+                           React.createElement('div', {className: 'sticky top-6'},
+                                React.createElement(PaletteControls),
+                                React.createElement(ActionControls),
+                                 React.createElement('div', { className: 'mt-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200' },
+                                    React.createElement('div', { className: 'mb-3' }, React.createElement('span', { className: 'font-medium text-sm text-purple-800' }, "🎵 Robot's Playlist")),
+                                    React.createElement('div', { className: 'space-y-2' },
+                                        Object.entries(musicTracks).map(([trackKey, track]) =>
+                                            React.createElement('button', {
+                                                key: trackKey, onClick: () => handleTrackClick(trackKey),
+                                                className: `w-full p-2 rounded-md text-sm font-medium transition-all flex items-center ${currentTrack === trackKey && musicEnabled ? 'bg-purple-600 text-white shadow-md' : 'bg-white text-purple-700 hover:bg-purple-100 border border-purple-200'}`
+                                            },
+                                                React.createElement('span', { className: 'mr-2 text-base' }, track.icon),
+                                                React.createElement('span', null, track.name),
+                                                currentTrack === trackKey && musicEnabled && React.createElement('span', { className: 'ml-auto text-lg' }, '♪')
+                                            )
+                                        )
+                                    ),
+                                    React.createElement('p', { className: 'text-xs text-purple-600 mt-3 italic' }, '"Click to play, click again to stop! But remember, robots don\'t have ears!"')
+                                )
+                            )
+                        ),
+
+                        // Main Content
+                        React.createElement('div', { className: 'flex-1' },
+                            // Mobile Controls
+                           React.createElement('div', { className: 'md:hidden mb-4 sticky top-0 z-20 bg-gradient-to-b from-indigo-50 to-transparent pb-2 -mx-4 px-4' },
+                                React.createElement('div', { className: 'relative' },
+                                    React.createElement('button', {
+                                        onClick: () => setIsPaletteOpen(!isPaletteOpen),
+                                        className: `w-full p-3 rounded-lg border-2 border-gray-600 font-semibold flex justify-between items-center transition-colors shadow-md ${selectedColorData ? selectedColorData.color + ' ' + selectedColorData.textColor : 'bg-amber-100 text-gray-800'}`
+                                    },
+                                        selectedCategory ? selectedColorData.label : "Select a Paint Colour",
+                                        React.createElement('span', {className: `transition-transform ${isPaletteOpen ? 'rotate-180' : ''}`}, '▼')
+                                    ),
+                                    React.createElement('button', {
+                                        onClick: () => setIsMusicMenuOpen(true),
+                                        className: 'absolute top-1/2 -translate-y-1/2 right-2 p-2 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200'
+                                    },
+                                      React.createElement(MusicIcon, null)
+                                    ),
+                                    isPaletteOpen && React.createElement('div', { className: 'absolute top-full left-0 right-0 border border-gray-300 rounded-b-lg shadow-lg z-20 mt-1'},
+                                       React.createElement(PaletteControls)
+                                    )
+                                )
+                            ),
+                             React.createElement('div', { className: 'md:hidden mb-4' },
+                                React.createElement(ActionControls)
+                            ),
+                        
+                            React.createElement('div', { className: 'bg-white/90 rounded-xl shadow-xl p-4 sm:p-6 ring-2 ring-gray-200 ring-opacity-50' },
+                                React.createElement('div', { className: 'flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 pb-3 border-b border-gray-300 gap-2' },
+                                    React.createElement('h2', { className: 'text-xl sm:text-2xl font-semibold text-gray-800', style: { whiteSpace: 'pre-line' } }, promptData[currentPrompt].title),
+                                    React.createElement('div', { className: 'flex gap-2 self-end sm:self-center' }, [1, 2, 3].map(num => React.createElement('button', { key: num, onClick: () => handlePromptChange(num), className: `px-3 py-1 rounded-lg text-sm font-medium transition-all ${currentPrompt === num ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}` }, 'Prompt ' + num)))
+                                ),
+                                React.createElement('div', { className: 'text-gray-800 leading-relaxed space-y-4' },
+                                    promptSections.length === 0 ? React.createElement('div', { className: 'text-center py-12' }, React.createElement('div', { className: 'text-6xl mb-4' }, '🚧'), React.createElement('h3', { className: 'text-xl font-semibold text-gray-600' }, 'Coming Soon!'))
+                                    : Object.entries(groupedSections).map(([categoryId, sections]) => {
+                                        const highlightAppliedCategory = Object.keys(highlights).find(cat => sections.some(sec => highlights[cat]?.includes(sec.id)));
+                                        const containerClass = highlightAppliedCategory ? `border-2 border-gray-400 rounded-xl p-4 bg-white bg-opacity-60` : 'space-y-2';
+
+                                        return React.createElement('div', { key: categoryId, className: containerClass },
+                                            highlightAppliedCategory && React.createElement('div', { className: `text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3` }, getCategoryDisplayName(highlightAppliedCategory)),
+                                            React.createElement('div', { className: 'space-y-2' }, sections.map(section =>
+                                                React.createElement('div', {
+                                                    key: section.id, onClick: () => handleSectionClick(section.id),
+                                                    className: `p-3 rounded-lg cursor-pointer transition-all hover:shadow-md border-2 ${getSectionHighlight(section.id) ? getSectionHighlight(section.id) + ' border-gray-400' : 'hover:bg-gray-100 border-transparent'} ${selectedCategory ? 'hover:border-gray-300' : ''}`,
+                                                    dangerouslySetInnerHTML: { __html: DOMPurify.sanitize(section.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')) }
+                                                })
+                                            ))
+                                        )
+                                    })
+                                )
+                            )
+                        )
+                    )
+                ),
+                // Music Slide-over Menu
+                isMusicMenuOpen && React.createElement('div', {}, 
+                    React.createElement('div', {
+                        className: 'fixed inset-0 bg-black bg-opacity-50 z-30 transition-opacity',
+                        onClick: () => setIsMusicMenuOpen(false)
+                    }),
+                    React.createElement(MusicMenu, null)
+                ),
+                showVictoryModal && React.createElement(VictoryModal, {
+                    onClose: () => {
+                        setShowVictoryModal(false);
+                        reset();
+                    }
+                })
+            );
+        }
+
+        ReactDOM.render(React.createElement(PromptHighlightingGame), document.getElementById('root'));
+    </script>
+</body>
+</html>

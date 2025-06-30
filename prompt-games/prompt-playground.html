@@ -117,10 +117,17 @@
 </head>
 <body class="bg-slate-900 text-white flex flex-col items-center justify-center min-h-screen p-4 md:p-8">
 
-    <!-- =========== HUB PAGE =========== -->
     <div id="hub-page" class="w-full">
         <div class="text-center w-full max-w-4xl mx-auto">
             <header class="mb-12">
+                <div class="mb-6">
+                    <a href="../index.html" class="inline-flex items-center text-sky-400 hover:text-sky-300 group font-medium transition-colors duration-150 text-sm md:text-base">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 transition-transform duration-150 group-hover:-translate-x-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                        </svg>
+                        Back to Tools
+                    </a>
+                </div>
                 <h1 class="text-5xl md:text-6xl font-extrabold text-cyan-400 mb-4">Prompt playground</h1>
                 <p class="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto text-left">
                     Welcome to your interactive training ground for AI prompting. Sharpen your skills through engaging activities and learn to craft prompts that deliver precise, creative, and reliable results.
@@ -146,7 +153,6 @@
         </div>
     </div>
 
-    <!-- =========== MEMORY GAME PAGE (ROUND 1) =========== -->
     <div id="memory-game-round1-page" class="hidden w-full">
          <div class="w-full max-w-5xl mx-auto text-center">
             <h1 class="text-4xl md:text-5xl font-bold text-cyan-400 mb-2">Prompting Principles: Round 1</h1>
@@ -169,7 +175,6 @@
     </div>
 
 
-    <!-- =========== MEMORY GAME PAGE (ROUND 2) =========== -->
     <div id="game-page" class="hidden w-full">
         <div class="absolute top-4 right-4 w-64">
             <h3 class="text-lg font-bold text-cyan-400 text-center mb-2">🏆 My best times</h3>
@@ -188,7 +193,6 @@
         <main id="game-board-container" class="perspective w-full max-w-3xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4"></main>
     </div>
 
-    <!-- =========== HALLUCINATION REDUCER PAGE (ROUND 1) =========== -->
     <div id="hallucination-page" class="hidden w-full">
         <div class="w-full max-w-7xl mx-auto text-center">
             <h1 class="text-4xl md:text-5xl font-bold text-amber-400 mb-2">Hallucination Reducer: Round 1</h1>
@@ -214,17 +218,14 @@
         </div>
     </div>
     
-    <!-- =========== HALLUCINATION REDUCER PAGE (ROUND 2) =========== -->
     <div id="hallucination-round2-page" class="hidden w-full">
          <div class="w-full max-w-4xl mx-auto text-center">
             <h1 class="text-4xl md:text-5xl font-bold text-amber-400 mb-2">Hallucination Reducer: Round 2</h1>
             <p class="text-slate-400 mb-4">Fill in the gaps by typing or dragging words from the pool.</p>
             <div id="word-pool" class="flex flex-wrap items-center justify-center gap-3 mb-8 p-4 bg-slate-800/50 rounded-lg min-h-[3.5rem]">
-                <!-- Word pool words will be injected here -->
-            </div>
+                </div>
             <div id="fill-gaps-container" class="space-y-6 text-left text-lg">
-                <!-- Gapped sentences will be injected here -->
-            </div>
+                </div>
              <div class="mt-8 space-x-4">
                 <button id="check-answers-btn" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-8 rounded-lg shadow-lg transition-colors">Check Answers</button>
                 <button id="hallucination-r2-back-to-hub-btn" class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-6 rounded-lg shadow-lg">Back to Hub</button>
@@ -233,7 +234,6 @@
     </div>
 
 
-    <!-- Modals -->
     <div id="memory-r1-complete-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden p-4">
         <div class="bg-slate-800 rounded-2xl p-8 text-center shadow-2xl border border-cyan-500 transform transition-all scale-95 opacity-0 fade-in" id="memory-r1-complete-modal-content">
             <h2 class="text-4xl font-bold text-cyan-400 mb-4">Round 1 Complete!</h2>

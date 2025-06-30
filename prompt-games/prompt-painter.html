@@ -759,7 +759,7 @@
                                 React.createElement('p', { className: 'text-sm text-amber-800 font-medium' },
                                     '❗ ',
                                     React.createElement('strong', null, 'Important:'),
-                                    ' Not every prompt will use all colour categories - some prompts might not have examples, others might not have constraints. Use only the colours that apply to the current prompt.'
+                                    ' Not every prompt will use all colour categories - some prompts might not have examples, others might not have constraints. Use only the colours that apply to this specific prompt.'
                                 )
                             ),
                             React.createElement('p', { className: 'text-sm text-gray-500 italic text-center' },
@@ -835,7 +835,7 @@
                                             React.createElement('div', { className: 'space-y-2' }, sections.map(section =>
                                                 React.createElement('div', {
                                                     key: section.id, onClick: () => handleSectionClick(section.id),
-                                                    className: `p-3 rounded-lg cursor-pointer transition-all hover:shadow-md border-2 ${getSectionHighlight(section.id) ? getSectionHighlight(section.id) + ' border-gray-400' : 'hover:bg-gray-100 border-transparent'} ${selectedCategory ? 'hover:border-gray-300' : ''}`,
+                                                    className: `p-3 rounded-lg cursor-pointer transition-all hover:shadow-md border-2 ${getSectionHighlight(section.id) ? getSectionHighlight(section.id) + ' border-gray-400' : 'hover:bg-gray-100 border-transparent'} ${selectedCategory ? 'hover:border-gray-300' : ''} break-words`,
                                                     dangerouslySetInnerHTML: { __html: DOMPurify.sanitize(section.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')) }
                                                 })
                                             ))

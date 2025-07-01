@@ -113,9 +113,23 @@
         .dragging {
             opacity: 0.5;
         }
+        /* Visually Hidden, Screen Reader Only */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-white flex flex-col items-center justify-center min-h-screen p-4 md:p-8">
+
+    <div id="game-status-announcer" class="sr-only" aria-live="polite"></div>
 
     <div id="hub-page" class="w-full">
         <div class="text-center w-full max-w-4xl mx-auto">
@@ -170,7 +184,10 @@
                     </div>
                 </div>
             </div>
-            <button id="memory-r1-back-to-hub-btn" class="mt-8 bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-6 rounded-lg shadow-lg">Back to Hub</button>
+            <div class="mt-8 space-x-4">
+                <button id="memory-r1-back-to-hub-btn" class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-6 rounded-lg shadow-lg">Back to Hub</button>
+                <button id="skip-to-memory-game-btn" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg">Skip to Memory Game</button>
+            </div>
         </div>
     </div>
 
@@ -283,6 +300,7 @@
             const memoryR1BackToHubBtn = document.getElementById('memory-r1-back-to-hub-btn');
             const proceedToR2Btn = document.getElementById('proceed-to-r2-btn');
             const memoryR1ModalHubBtn = document.getElementById('memory-r1-modal-hub-btn');
+            const skipToMemoryGameBtn = document.getElementById('skip-to-memory-game-btn');
             const playHallucinationGameBtn = document.getElementById('play-hallucination-game-btn');
             const hallucinationBackToHubBtn = document.getElementById('hallucination-back-to-hub-btn');
             const hallucinationR2BackToHubBtn = document.getElementById('hallucination-r2-back-to-hub-btn');
@@ -314,6 +332,7 @@
             const wordPoolContainer = document.getElementById('word-pool');
             const hallucinationVictoryModal = document.getElementById('hallucination-victory-modal');
             const hallucinationVictoryModalContent = document.getElementById('hallucination-victory-modal-content');
+            const announcer = document.getElementById('game-status-announcer');
 
             // --- Page Navigation Logic ---
             function showPage(pageToShow) {
@@ -326,6 +345,7 @@
             gameBackToHubBtn.addEventListener('click', () => showPage(hubPage));
             memoryR1BackToHubBtn.addEventListener('click', () => showPage(hubPage));
             proceedToR2Btn.addEventListener('click', () => { showPage(gamePage); restartGame(); });
+            skipToMemoryGameBtn.addEventListener('click', () => { showPage(gamePage); restartGame(); });
             memoryR1ModalHubBtn.addEventListener('click', () => showPage(hubPage));
             playHallucinationGameBtn.addEventListener('click', () => { showPage(hallucinationPage); initHallucinationGame(); });
             hallucinationBackToHubBtn.addEventListener('click', () => showPage(hubPage));
@@ -343,6 +363,11 @@
                 }
             };
             document.body.addEventListener('click', initSynth, { once: true });
+
+            function announce(message) {
+                announcer.textContent = message;
+                setTimeout(() => { announcer.textContent = ''; }, 3000);
+            }
 
             function shuffleArray(array) {
                 for (let i = array.length - 1; i > 0; i--) {
@@ -371,6 +396,17 @@
                 }
             }
             
+            function makeItemAccessible(item) {
+                item.setAttribute('role', 'button');
+                item.setAttribute('tabindex', '0');
+                item.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        item.click();
+                    }
+                });
+            }
+
             // --- Memory Game Round 1 Logic ---
             let memoryR1Selected = [];
             let memoryR1Correct = [];
@@ -400,7 +436,10 @@
             }
             
             function addMemoryR1Listeners() {
-                document.querySelectorAll('#memory-game-round1-page .match-item').forEach(item => item.addEventListener('click', handleMemoryR1Click));
+                document.querySelectorAll('#memory-game-round1-page .match-item').forEach(item => {
+                    makeItemAccessible(item);
+                    item.addEventListener('click', handleMemoryR1Click)
+                });
             }
             
             function handleMemoryR1Click(event) {
@@ -430,6 +469,7 @@
                         i.element.classList.add('correct');
                         i.element.classList.remove('selected');
                     });
+                    announce('Match found!');
                     if (synth) synth.triggerAttackRelease('C5', '8n', Tone.now());
                     if (memoryR1Correct.length === memoryCardData.length) {
                         setTimeout(() => {
@@ -438,6 +478,7 @@
                         }, 500);
                     }
                  } else {
+                    announce('Incorrect match.');
                     if (synth) synth.triggerAttackRelease('A2', '8n', Tone.now());
                  }
                  setTimeout(() => {
@@ -494,7 +535,12 @@
                 addHallucinationListeners();
                 setTimeout(() => resizeHallucinationCanvas(), 100);
             }
-            function addHallucinationListeners() { document.querySelectorAll('#hallucination-page .path-item').forEach(item => { item.addEventListener('click', handleHallucinationPathClick); });}
+            function addHallucinationListeners() { 
+                document.querySelectorAll('#hallucination-page .path-item').forEach(item => { 
+                    makeItemAccessible(item);
+                    item.addEventListener('click', handleHallucinationPathClick);
+                });
+            }
             function handleHallucinationPathClick(event) {
                 const item = event.currentTarget;
                 if (item.classList.contains('correct')) return;
@@ -521,8 +567,12 @@
                 if (isCorrect) {
                     hallucinationCorrectPaths.push([...hallucinationSelected]);
                     hallucinationSelected.forEach(item => { item.element.classList.add('correct'); item.element.classList.remove('selected'); });
+                    announce('Path complete!');
                     if (synth) synth.triggerAttackRelease('C5', '8n', Tone.now());
-                } else { if (synth) synth.triggerAttackRelease('A2', '8n', Tone.now()); }
+                } else { 
+                    announce('Incorrect Path.');
+                    if (synth) synth.triggerAttackRelease('A2', '8n', Tone.now()); 
+                }
                 drawHallucinationLines(true, isCorrect ? '#10b981' : '#ef4444');
                 setTimeout(() => {
                     if (!isCorrect) { hallucinationSelected.forEach(item => item.element.classList.remove('selected')); }
@@ -586,25 +636,38 @@
                         setTimeout(() => e.target.classList.add('dragging'), 0);
                     });
                     wordElement.addEventListener('dragend', (e) => { e.target.classList.remove('dragging'); });
+                    makeItemAccessible(wordElement);
+                    wordElement.addEventListener('click', (e) => {
+                        const activeInputElement = document.querySelector('.gap-input:focus');
+                        if (activeInputElement) {
+                            activeInputElement.value = e.target.textContent;
+                        }
+                    });
                     wordPoolContainer.appendChild(wordElement);
                 });
             }
             function checkRound2Answers() {
                 let allCorrect = true;
+                let incorrectCount = 0;
                 hallucinationData.forEach(item => {
                     const container = fillGapsContainer.querySelector(`[data-r2-id="${item.id}"]`);
                     const inputs = container.querySelectorAll('.gap-input');
                     inputs.forEach((input, i) => {
                         const isCorrect = input.value.trim().toLowerCase().replace(/[.!,]/g, '') === item.answers[i].toLowerCase().replace(/[.!,]/g, '');
                         input.classList.remove('correct', 'incorrect'); input.classList.add(isCorrect ? 'correct' : 'incorrect');
-                        if (!isCorrect) allCorrect = false;
+                        if (!isCorrect) {
+                            allCorrect = false;
+                            incorrectCount++;
+                        }
                     });
                 });
                 if (allCorrect) {
+                     announce('All answers are correct!');
                      if (synth) synth.triggerAttackRelease('G5', '8n', Tone.now());
                      hallucinationVictoryModal.classList.remove('hidden');
                      hallucinationVictoryModalContent.classList.remove('opacity-0', 'scale-95');
                 } else {
+                     announce(`${incorrectCount} incorrect answers. Please try again.`);
                      if (synth) synth.triggerAttackRelease('A2', '8n', Tone.now());
                 }
             }
@@ -668,6 +731,7 @@
                         <div class="front-face bg-slate-800 rounded-lg flex items-center justify-center text-center p-3 border-2 border-cyan-500">
                            <span class="text-sm md:text-base">${contentHTML}</span>
                         </div>`;
+                    makeItemAccessible(card);
                     card.addEventListener('click', flipCard);
                     gameBoard.appendChild(card);
                 });
@@ -676,6 +740,7 @@
                 if (lockBoard || this === firstCard) return;
                 if (!gameStarted) startTimer();
                 this.classList.add('flip');
+                announce(`Card flipped. It says: ${this.querySelector('.front-face').textContent}`);
                 if (!hasFlippedCard) {
                     hasFlippedCard = true;
                     firstCard = this;
@@ -693,6 +758,7 @@
                 lockBoard = true;
                 setTimeout(() => {
                     firstCard.classList.add('matched'); secondCard.classList.add('matched');
+                    announce('Match found!');
                     if (synth) synth.triggerAttackRelease('C5', '8n', Tone.now());
                     firstCard.removeEventListener('click', flipCard); secondCard.removeEventListener('click', flipCard);
                     matchedPairs++;
@@ -708,6 +774,7 @@
                 lockBoard = true;
                 setTimeout(() => {
                     firstCard.classList.remove('flip'); secondCard.classList.remove('flip');
+                    announce('Incorrect match.');
                     resetBoard();
                 }, 1200);
             }
@@ -718,6 +785,7 @@
                     finalMovesSpan.textContent = moves; finalTimeSpan.textContent = `${seconds}s`;
                     winModal.classList.remove('hidden');
                     winModalContent.classList.remove('opacity-0', 'scale-95');
+                    announce(`Congratulations! You won in ${seconds} seconds with ${moves} moves.`);
                 }, 200);
             }
             function hideAllModals() {

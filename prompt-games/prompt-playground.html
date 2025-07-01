@@ -183,11 +183,15 @@
         <div class="w-full max-w-4xl mx-auto text-center">
             <h1 class="text-4xl md:text-5xl font-bold text-cyan-400 mb-2 mt-4 md:mt-0">Prompting Principles: Round 2</h1>
             <p class="text-slate-400 mb-4">Click cards to find matching pairs!</p>
-            <div class="flex flex-wrap items-center justify-center space-x-4 md:space-x-6 mb-6">
-                <p class="text-lg">Moves: <span id="moves-counter" class="font-bold text-xl text-amber-400">0</span></p>
-                <p class="text-lg">Time: <span id="timer" class="font-bold text-xl text-amber-400">0s</span></p>
-                <button id="game-restart-btn" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">Restart</button>
-                <button id="game-back-to-hub-btn" class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">Back to Hub</button>
+            <div class="flex flex-wrap items-center justify-center gap-4 md:space-x-6 mb-6">
+                <div class="flex items-center justify-center space-x-4">
+                    <p class="text-lg">Moves: <span id="moves-counter" class="font-bold text-xl text-amber-400">0</span></p>
+                    <p class="text-lg">Time: <span id="timer" class="font-bold text-xl text-amber-400">0s</span></p>
+                </div>
+                <div class="flex items-center justify-center space-x-4">
+                    <button id="game-restart-btn" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">Restart</button>
+                    <button id="game-back-to-hub-btn" class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">Back to Hub</button>
+                </div>
             </div>
         </div>
         <main id="game-board-container" class="perspective w-full max-w-3xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4"></main>

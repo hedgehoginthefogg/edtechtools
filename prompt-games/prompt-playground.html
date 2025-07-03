@@ -24,7 +24,7 @@
             perspective: 1000px;
         }
         .memory-card {
-            position: relative; 
+            position: relative;
             transform-style: preserve-3d;
             transition: transform 0.6s;
             transform: rotateY(0deg);
@@ -271,7 +271,7 @@
             <p class="text-slate-300 text-lg mb-2">Congratulations! You found all the matches.</p>
             <p class="text-slate-400 mb-6">Time: <span id="final-time" class="font-bold text-amber-400">0s</span> | Moves: <span id="final-moves" class="font-bold text-amber-400">0</span></p>
             <div class="flex justify-center space-x-4">
-                <button id="play-again-btn" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg text-lg transition-transform transform hover:scale-105">Play Again</button>
+                <button id="play-again-btn" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg text-lg transition-transform transform hover:scale-105">Restart</button>
                 <button id="win-modal-hub-btn" class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg text-lg transition-transform transform hover:scale-105">Back to Hub</button>
             </div>
         </div>
@@ -410,13 +410,16 @@
             // --- Memory Game Round 1 Logic ---
             let memoryR1Selected = [];
             let memoryR1Correct = [];
-            const memoryCardData = [
+            
+            const originalMemoryCardData = [
                 { id: 1, type: 'tip', content: 'Specify a role and goal:' }, { id: 1, type: 'expression', content: 'Act as … Your goal is …' },
                 { id: 2, type: 'tip', content: 'Give it constraints:' }, { id: 2, type: 'expression', content: 'Use … Don’t … It’s essential that …' },
                 { id: 3, type: 'tip', content: 'Give step-by-step instructions:' }, { id: 3, type: 'expression', content: 'First … Wait for a response … Then … Wait for a response … Next … Wait for a response' },
                 { id: 4, type: 'tip', content: 'Give examples and specify output format:' }, { id: 4, type: 'expression', content: 'Answer in the format of the following example: … ' },
                 { id: 5, type: 'tip', content: 'Follow up with new instructions:' }, { id: 5, type: 'expression', content: 'That answer wasn’t good because … Try again, but this time …' },
             ];
+            let memoryCardData;
+
 
             function initMemoryGameRound1() {
                 memoryR1Selected = []; memoryR1Correct = [];
@@ -694,6 +697,7 @@
             function stopTimer() { clearInterval(timerInterval); gameStarted = false; }
             function getScores() { return JSON.parse(localStorage.getItem('memoryGameScores')) || []; }
             function saveScores(scores) { localStorage.setItem('memoryGameScores', JSON.stringify(scores)); }
+            
             function updateLeaderboard() {
                 const scores = getScores();
                 leaderboardDiv.innerHTML = '';
@@ -703,11 +707,19 @@
                 }
                 scores.slice(0, 5).forEach((score, index) => {
                     const scoreElement = document.createElement('div');
-                    scoreElement.classList.add('flex', 'justify-between', 'items-center', 'text-sm', 'p-1', 'rounded', index === 0 ? 'bg-amber-500/20' : '');
+                    // Base classes that are always added
+                    scoreElement.classList.add('flex', 'justify-between', 'items-center', 'text-sm', 'p-1', 'rounded');
+                    
+                    // Conditionally add the highlight class for the top score
+                    if (index === 0) {
+                        scoreElement.classList.add('bg-amber-500/20');
+                    }
+                    
                     scoreElement.innerHTML = `<span class="font-bold">#${index + 1}</span><span class="text-slate-400">${score.time}s / ${score.moves} moves</span>`;
                     leaderboardDiv.appendChild(scoreElement);
                 });
             }
+
             function shuffleMemory() {
                 let currentIndex = memoryCardData.length, randomIndex;
                 while (currentIndex != 0) {
@@ -799,6 +811,7 @@
             function restartGame() {
                 hideAllModals();
                 stopTimer();
+                memoryCardData = JSON.parse(JSON.stringify(originalMemoryCardData));
                 moves = 0; matchedPairs = 0; seconds = 0; gameStarted = false;
                 movesCounter.textContent = '0';
                 timerDisplay.textContent = '0s';
@@ -822,6 +835,8 @@
             
             // --- Initial App Start ---
             updateLeaderboard();
+            // Initialize the game data on first load
+            memoryCardData = JSON.parse(JSON.stringify(originalMemoryCardData));
         });
     </script>
 </body>

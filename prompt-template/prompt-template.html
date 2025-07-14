@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Copilot Agent Prompt Builder</title>
+    
+    <style>
+        /* CSS Variables */
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #1f2937;
+            --background-color: #f9fafb;
+            --text-color: #111827;
+            --subtle-text-color: #6b7280;
+            --error-color: #dc2626;
+            --success-color: #16a34a;
+        }
+
+        /* Base and Typography */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+        }
+
+        h1, h2 {
+            color: var(--secondary-color);
+            margin: 0;
+        }
+        
+        h1 {
+            font-size: 2.25rem; /* text-4xl */
+            font-weight: 700; /* font-bold */
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+
+        h2 {
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 600; /* font-semibold */
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+        
+        .section-heading {
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 700; /* font-bold */
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+
+        p {
+            margin: 0;
+        }
+
+        .subtitle {
+            font-size: 1.125rem; /* text-lg */
+            color: var(--subtle-text-color); /* text-gray-600 */
+        }
+
+        .section-description {
+            color: #374151; /* text-gray-700 */
+            margin-bottom: 1rem; /* mb-4 */
+        }
+
+        /* Layout */
+        .container {
+            max-width: 700px;
+            box-sizing: border-box;
+            margin: 0 auto;
+            padding: 2rem; 
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem; /* mb-8 */
+        }
+
+        section {
+            margin-bottom: 2rem; /* mb-8 */
+        }
+
+        .guidance {
+            background-color: #eef2ff;
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem;
+            margin-bottom: 1.5rem; 
+            border-radius: 0.25rem;
+        }
+        
+        .guidance-important {
+            margin-top: 0.5rem; /* mt-2 */
+            font-weight: 600; /* font-semibold */
+        }
+        
+        .controls-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.5rem; /* mt-2 */
+        }
+        
+        .controls-container {
+            display: flex;
+        }
+
+        .controls-container > * + * {
+            margin-left: 0.5rem; /* space-x-2 */
+        }
+
+        /* Form Elements & Textareas */
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid #d1d5db;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            resize: vertical;
+            min-height: 200px;
+            font-family: inherit;
+            font-size: 1.125rem;
+        }
+
+        textarea::placeholder {
+            color: #5a626f; 
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.3);
+        }
+
+        .char-counter {
+            text-align: right;
+            font-size: 0.875rem;
+            color: var(--subtle-text-color);
+            margin-left: auto;
+        }
+        
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.375rem;
+            font-weight: 600;
+            color: white;
+            background-color: var(--primary-color);
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #4338ca;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+        }
+        .btn-secondary:hover {
+            background-color: #374151;
+        }
+
+        .btn-example, .btn-clear {
+            background: none;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .btn-example {
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        /* ACCESSIBILITY FIX 1: Darkened background for better contrast on hover. */
+        .btn-example:hover {
+            color: #fff;
+            background-color: #4338ca;
+        }
+
+        .btn-clear {
+            border: 1px solid var(--error-color);
+            color: var(--error-color);
+        }
+        
+        /* ACCESSIBILITY FIX 2: Swapped to solid background with white text for better contrast. */
+        .btn-clear:hover {
+            background-color: var(--error-color);
+            color: #fff;
+        }
+
+        /* Final Output Section */
+        #final-output-container {
+            padding: 1.5rem;
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+        
+        .font-semibold {
+            font-weight: 600;
+        }
+        
+        #final-char-count.error {
+            color: var(--error-color);
+            font-weight: bold;
+        }
+
+        .copy-success-message {
+            color: var(--success-color);
+            font-weight: 500;
+            margin-left: 1rem;
+        }
+
+        .copy-icon {
+            margin-right: 0.5rem; /* mr-2 */
+        }
+        
+        /* Utility Classes (used by JS) */
+        .hidden {
+            display: none;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        .example-text {
+            white-space: pre-wrap;
+            background-color: #f3f4f6;
+            border-left: 3px solid #d1d5db;
+            padding: 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.9rem;
+            color: #4b5563;
+            line-height: 1.5;
+            margin-top: 0.5rem; /* mt-2 */
+        }
+
+        .text-center {
+            text-align: center;
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <main class="container">
+        <header>
+            <h1>Copilot Agent Prompt Builder</h1>
+            <p class="subtitle">Use this tool to craft effective instructions for your Copilot AI Agents.</p>
+        </header>
+
+        <div class="guidance" role="region" aria-labelledby="guidance-heading">
+            <h2 id="guidance-heading">How to use this template</h2>
+            <p>Look at the guidance and examples and then complete the text boxes below with your own information. You don’t need to include all the sections – just fill out what's appropriate for your agent. When you’re finished, click the "Generate Instructions" button at the bottom. This will combine your text into a single block that you can copy and paste into the Copilot Agent creator.</p>
+            <p class="guidance-important">Your work will be saved in your browser, but for long-term storage, please save your final instructions in a separate document.</p>
+        </div>
+
+        <section aria-labelledby="role-heading">
+            <h2 id="role-heading" class="section-heading">Role and Goal</h2>
+            <p class="section-description">Giving the AI a role (e.g., 'a teacher') and a goal (e.g., 'to help students learn for themselves') helps establish context and influences its communication style. In some circumstances, it has been found to improve accuracy.</p>
+            <label for="role-goal" class="sr-only">Role and Goal Instructions</label>
+            <textarea id="role-goal" aria-describedby="role-counter"></textarea>
+            <div class="controls-wrapper">
+                <div id="controls-container-role-goal" class="controls-container hidden">
+                    <button id="clear-btn-role-goal" class="btn-clear">Clear</button>
+                    <button id="example-btn-role-goal" class="btn-example" aria-expanded="false">Show Example</button>
+                </div>
+                <div id="role-counter" class="char-counter" aria-live="polite">0 characters</div>
+            </div>
+            <div id="example-text-role-goal" class="example-text hidden"></div>
+        </section>
+
+        <section aria-labelledby="process-heading">
+            <h2 id="process-heading" class="section-heading">Step-by-step Process</h2>
+            <p class="section-description">Breaking down the task into logical steps can have a big impact on accuracy. Think about how you would do the task yourself. Use 'If' statements to describe what it should do if the user chooses different starter prompts or gives different answers to questions.</p>
+            <label for="step-by-step" class="sr-only">Step-by-step Process Instructions</label>
+            <textarea id="step-by-step" aria-describedby="process-counter"></textarea>
+            <div class="controls-wrapper">
+                <div id="controls-container-step-by-step" class="controls-container hidden">
+                    <button id="clear-btn-step-by-step" class="btn-clear">Clear</button>
+                    <button id="example-btn-step-by-step" class="btn-example" aria-expanded="false">Show Example</button>
+                </div>
+                <div id="process-counter" class="char-counter" aria-live="polite">0 characters</div>
+            </div>
+            <div id="example-text-step-by-step" class="example-text hidden"></div>
+        </section>
+
+        <section aria-labelledby="constraints-heading">
+            <h2 id="constraints-heading" class="section-heading">Constraints</h2>
+            <p class="section-description">Add any restrictions on how Copilot should communicate or behave. Try to use positive constraints (‘You MUST…’) rather than negative constraints (‘Don’t…’) as this has been shown to generally work better.</p>
+            <label for="constraints" class="sr-only">Constraints Instructions</label>
+            <textarea id="constraints" aria-describedby="constraints-counter"></textarea>
+            <div class="controls-wrapper">
+                <div id="controls-container-constraints" class="controls-container hidden">
+                    <button id="clear-btn-constraints" class="btn-clear">Clear</button>
+                    <button id="example-btn-constraints" class="btn-example" aria-expanded="false">Show Example</button>
+                </div>
+                <div id="constraints-counter" class="char-counter" aria-live="polite">0 characters</div>
+            </div>
+            <div id="example-text-constraints" class="example-text hidden"></div>
+        </section>
+
+        <section aria-labelledby="examples-heading">
+            <h2 id="examples-heading" class="section-heading">Examples / Output Format</h2>
+            <p class="section-description">This is an optional section. Only include it if it’s important that Copilot answers in a specific way, e.g., in a table with certain headings. Otherwise, it's recommended to test your Agent without examples first to not reduce its flexibility.</p>
+            <label for="examples" class="sr-only">Examples / Output Format Instructions</label>
+            <textarea id="examples" aria-describedby="examples-counter"></textarea>
+            <div class="controls-wrapper">
+                <div id="controls-container-examples" class="controls-container hidden">
+                    <button id="clear-btn-examples" class="btn-clear">Clear</button>
+                    <button id="example-btn-examples" class="btn-example" aria-expanded="false">Show Example</button>
+                </div>
+                <div id="examples-counter" class="char-counter" aria-live="polite">0 characters</div>
+            </div>
+            <div id="example-text-examples" class="example-text hidden"></div>
+        </section>
+
+        <section aria-labelledby="knowledge-heading">
+            <h2 id="knowledge-heading" class="section-heading">Knowledge</h2>
+            <p class="section-description">This is an optional section. Include it if you want Copilot to answer questions based on specific information (e.g., internal team info). You can include links to further info and ask Copilot to provide these to the user. If creating a student-facing agent, you could provide course details, information about key concepts at the right level, feedback or model answers.</p>
+            <label for="knowledge" class="sr-only">Knowledge Instructions</label>
+            <textarea id="knowledge" aria-describedby="knowledge-counter"></textarea>
+            <div class="controls-wrapper">
+                <div id="controls-container-knowledge" class="controls-container hidden">
+                    <button id="clear-btn-knowledge" class="btn-clear">Clear</button>
+                    <button id="example-btn-knowledge" class="btn-example" aria-expanded="false">Show Example</button>
+                </div>
+                <div id="knowledge-counter" class="char-counter" aria-live="polite">0 characters</div>
+            </div>
+            <div id="example-text-knowledge" class="example-text hidden"></div>
+        </section>
+
+        <section aria-labelledby="hallucinations-heading">
+            <h2 id="hallucinations-heading" class="section-heading">Reduce Hallucinations</h2>
+            <p class="section-description">This is an optional section. If you provide custom 'knowledge' for Copilot to use, you should tell it whether it should ONLY use this knowledge, or prioritize it and fall back on its wider knowledge if necessary. You should also tell it what to do if it doesn't find the answer, as this reduces the likelihood that it will make something up.</p>
+            <label for="hallucinations" class="sr-only">Reduce Hallucinations Instructions</label>
+            <textarea id="hallucinations" aria-describedby="hallucinations-counter"></textarea>
+            <div class="controls-wrapper">
+                <div id="controls-container-hallucinations" class="controls-container hidden">
+                    <button id="clear-btn-hallucinations" class="btn-clear">Clear</button>
+                    <button id="example-btn-hallucinations" class="btn-example" aria-expanded="false">Show Example</button>
+                </div>
+                <div id="hallucinations-counter" class="char-counter" aria-live="polite">0 characters</div>
+            </div>
+            <div id="example-text-hallucinations" class="example-text hidden"></div>
+        </section>
+
+        <div class="text-center">
+            <button id="generate-btn" class="btn">Generate Instructions</button>
+        </div>
+
+        <div id="final-output-container" class="hidden" aria-live="assertive">
+            <h2 class="section-heading">Your Combined Instructions</h2>
+            <p class="section-description">Copy the text below and paste it into the 'Instructions' box in the Copilot Agent creator. Test how the Agent works and make changes to the instructions on this page if it's not behaving as expected. </p>
+            <div class="output-header">
+                <span class="font-semibold">Total Character Count:</span>
+                <span id="final-char-count">0 / 8000</span>
+            </div>
+            <label for="final-output" class="sr-only">Combined Instructions</label>
+            <textarea id="final-output" readonly rows="15"></textarea>
+            <div class="text-center" style="margin-top: 1rem;">
+                <button id="copy-btn" class="btn btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="copy-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                      <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                      <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                    </svg>
+                    Copy to Clipboard
+                </button>
+                <span id="copy-success" class="copy-success-message" aria-live="assertive"></span>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const textareas = [
+                { id: 'role-goal', counterId: 'role-counter', heading: 'ROLE AND GOAL', placeholder: '• You are a patient teacher and your goal is to help students learn for themselves. \n• You are an excellent role-player you always stick to character. Your goal is to help the user (a Dietetic student in the School of Health at Coventry university) apply their skills in a practical simulation through the use of role-play.\n• You are an expert librarian owl 🦉 called Archimedes and your goal is to help the members of the Coventry University Online (CUOL) media team find SOPs. ' },
+                { id: 'step-by-step', counterId: 'process-counter', heading: 'STEP-BY-STEP PROCESS', placeholder: 'First, you must always start the conversation by asking “…”\n\nThen, …\n\nScenario 1 – If the user … , then …\nScenario 2 – If the user …, then …' },
+                { id: 'hallucinations', counterId: 'hallucinations-counter', heading: 'REDUCE HALLUCINATIONS', placeholder: "It's essential that you only answer using information from the KNOWLEDGE section. Always provide a direct quote from the KNOWLEDGE section and base your answer on this. It's okay if you're not certain of the correct answer, or if you don't have enough information! In these cases, just say 'Sorry, I don't have enough information to answer that question, please contact ... with your query'." },
+                { id: 'constraints', counterId: 'constraints-counter', heading: 'CONSTRAINTS', placeholder: '• You MUST use British English\n• ONLY re-organise the information provided by the user, rather than adding any new information.\n• PRIORITY INSTRUCTION: Always ask the user to explain the concept in their own words before providing an answer.\n• You MUST keep your responses brief to encourage follow-up questions from the user.\n• When referencing particular Ed Tech tools, it\'s ESSENTIAL that you always provide the link from the selection below to the relevant Teaching Knowledge Base page.' },
+                { id: 'examples', counterId: 'examples-counter', heading: 'EXAMPLE ANSWER / OUTPUT FORMAT', placeholder: '• Always answer in the following format, clearly denoting each speaker in the role-play:\n\n👵 **Caroline**: \n🧓 **Alan**: \n\n• Always answer in a table with these headings: SOP name, Description, Link' },
+                { id: 'knowledge', counterId: 'knowledge-counter', heading: 'KNOWLEDGE', placeholder: '• You MUST always base your answers on this knowledge: ...\n• ALWAYS base your feedback to students on these model answers: ...' }
+            ];
+
+          
+            // We will treat all user input as plain text.
+
+            textareas.forEach(item => {
+                const textarea = document.getElementById(item.id);
+                const counter = document.getElementById(item.counterId);
+                const controlsContainer = document.getElementById(`controls-container-${item.id}`);
+                const clearBtn = document.getElementById(`clear-btn-${item.id}`);
+                const exampleBtn = document.getElementById(`example-btn-${item.id}`);
+                const exampleText = document.getElementById(`example-text-${item.id}`);
+
+                if(textarea && counter && controlsContainer && clearBtn && exampleBtn && exampleText) {
+                    textarea.placeholder = item.placeholder;
+
+                    textarea.addEventListener('input', () => {
+                        const value = textarea.value;
+                        counter.textContent = `${value.length} characters`;
+                        
+                        // Save the raw text to localStorage. It will be treated as text, not HTML.
+                        localStorage.setItem(`copilot-prompt-builder-${item.id}`, value);
+
+                        if (value.length > 0) {
+                            controlsContainer.classList.remove('hidden');
+                        } else {
+                            controlsContainer.classList.add('hidden');
+                            exampleText.classList.add('hidden');
+                            exampleBtn.textContent = 'Show Example';
+                            // IMPLEMENTED: Reset aria-expanded when cleared
+                            exampleBtn.setAttribute('aria-expanded', 'false');
+                            localStorage.removeItem(`copilot-prompt-builder-${item.id}`);
+                        }
+                    });
+
+                    // Retrieve the raw text from localStorage.
+                    const savedValue = localStorage.getItem(`copilot-prompt-builder-${item.id}`);
+                    if (savedValue) {
+                        // Setting .value on a textarea treats the input as plain text.
+                        textarea.value = savedValue;
+                        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                    
+                    clearBtn.addEventListener('click', () => {
+                        textarea.value = '';
+                        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                        textarea.focus();
+                    });
+
+                    exampleBtn.addEventListener('click', () => {
+                        const isHidden = exampleText.classList.toggle('hidden');
+                        exampleBtn.textContent = isHidden ? 'Show Example' : 'Hide Example';
+                        // IMPLEMENTED: Dynamically update aria-expanded
+                        exampleBtn.setAttribute('aria-expanded', !isHidden);
+                        if (!isHidden) {
+                            // Using .textContent is safe as it renders content as plain text, not HTML.
+                            exampleText.textContent = item.placeholder;
+                        }
+                    });
+                }
+            });
+
+            const generateBtn = document.getElementById('generate-btn');
+            const finalOutputContainer = document.getElementById('final-output-container');
+            const finalOutputTextarea = document.getElementById('final-output');
+            const finalCharCount = document.getElementById('final-char-count');
+            const copyBtn = document.getElementById('copy-btn');
+            const copySuccess = document.getElementById('copy-success');
+
+            generateBtn.addEventListener('click', () => {
+                let combinedText = '';
+                
+                textareas.forEach(item => {
+                    const textarea = document.getElementById(item.id);
+                    // The content is retrieved as plain text from the textarea's value.
+                    const content = textarea.value; 
+                    
+                    if (textarea && content.trim() !== '') {
+                        combinedText += `${item.heading}\n${content}\n\n`;
+                    }
+                });
+
+                combinedText = combinedText.trim();
+                const totalChars = combinedText.length;
+
+                finalOutputTextarea.value = combinedText;
+                finalCharCount.textContent = `${totalChars} / 8000`;
+
+                if (totalChars > 8000) {
+                    finalCharCount.classList.add('error');
+                } else {
+                    finalCharCount.classList.remove('error');
+                }
+
+                finalOutputContainer.classList.remove('hidden');
+                finalOutputTextarea.focus();
+            });
+
+            // Modern clipboard function with fallback for maximum compatibility.
+            copyBtn.addEventListener('click', () => {
+                const textToCopy = finalOutputTextarea.value;
+                
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        copySuccess.textContent = 'Copied!';
+                        setTimeout(() => { copySuccess.textContent = ''; }, 2000);
+                    }).catch(err => {
+                        console.error('Async clipboard copy failed:', err);
+                        fallbackCopyText(textToCopy); // Fallback if promise rejects
+                    });
+                } else {
+                    fallbackCopyText(textToCopy); // Fallback for older browsers
+                }
+            });
+
+            function fallbackCopyText(text) {
+                // The textarea is already focused, but we select the text to copy.
+                finalOutputTextarea.select();
+                try {
+                    document.execCommand('copy');
+                    copySuccess.textContent = 'Copied!';
+                    setTimeout(() => { copySuccess.textContent = ''; }, 2000);
+                } catch (err) {
+                    console.error('Fallback copy command failed:', err);
+                    copySuccess.textContent = 'Failed to copy.';
+                }
+                // Deselect the text after copying.
+                window.getSelection().removeAllRanges();
+            }
+        });
+    </script>
+
+</body>
+</html>

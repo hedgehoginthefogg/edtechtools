@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOP Finder Prompt Completion Activity</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* General Body and Font Styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #020617;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Layout Containers */
+        .container {
+            width: 100%;
+            max-width: 80rem; /* Corresponds to max-w-7xl for wider view */
+            margin-left: auto;
+            margin-right: auto;
+            padding: 1rem;
+        }
+        @media (min-width: 768px) {
+            .container {
+                padding: 2rem;
+            }
+        }
+        .main-content {
+            max-width: 56rem; /* Corresponds to max-w-4xl */
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Header Styles */
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+        .header h1 {
+            font-size: 2.25rem; /* text-4xl */
+            line-height: 2.5rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        @media (min-width: 768px) {
+            .header h1 {
+                font-size: 3rem; /* md:text-5xl */
+                line-height: 1;
+            }
+        }
+        .header p {
+            margin-top: 0.5rem;
+            font-size: 1.125rem; /* text-lg */
+            line-height: 1.75rem;
+            color: #334155; /* Changed from #475569 for AAA contrast */
+        }
+        
+        /* Section Styles */
+        .section {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid #cbd5e1; /* Changed from #e2e8f0 for better contrast */
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+        }
+        .section-title {
+            font-size: 1.5rem; /* text-2xl */
+            line-height: 2rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #cbd5e1; /* Changed from #e2e8f0 for better contrast */
+        }
+        .section p {
+            margin-bottom: 1rem;
+        }
+        .sticky-section {
+            position: -webkit-sticky;
+            position: sticky;
+            top: 1rem;
+            z-index: 10;
+        }
+        
+        /* Prompt Text Styles */
+        .prompt-text {
+            color: #1e293b; /* Changed from #334155 for AAA contrast */
+            line-height: 1.8;
+            font-size: 1rem;
+        }
+        .prompt-structure {
+            margin-bottom: 1.5rem;
+        }
+        .prompt-structure:last-child {
+            margin-bottom: 0;
+        }
+        .prompt-structure h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        /* Word Pool & Draggable Items */
+        .word-pool {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            padding: 1rem;
+            background-color: #f1f5f9;
+            border-radius: 0.75rem;
+            min-height: 50px;
+        }
+        .draggable-word {
+            padding: 0.5rem 1rem;
+            background-color: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            cursor: grab;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1);
+            user-select: none;
+        }
+        .draggable-word.used {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background-color: #e2e8f0;
+        }
+        .dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        /* Drop Zone & Input Styles */
+        .drop-zone-wrapper {
+            position: relative;
+            display: inline-block;
+            vertical-align: bottom; /* Aligns box with the bottom of the text line */
+        }
+        .drop-zone-input {
+            box-sizing: border-box; /* Ensures padding and border are included in the height */
+            width: 170px;
+            height: 32px; /* Reduced height */
+            padding: 0.25rem; /* Reduced padding */
+            padding-right: 2rem; /* Space for icon */
+            border: 2px dashed #64748b; /* Changed from #94a3b8 for better contrast */
+            border-radius: 0.5rem;
+            background-color: #f8fafc;
+            transition: all 0.2s;
+            text-align: center;
+            font-weight: 500;
+            color: #1e293b; /* Changed from #1e3a8a for AAA contrast */
+            font-size: 1em; /* Inherits font-size from parent <p> */
+        }
+        .drop-zone-wrapper.drag-over .drop-zone-input {
+            background-color: #dbeafe;
+            border-color: #3b82f6;
+        }
+        .drop-zone-input:focus {
+             border-color: #3b82f6;
+             background-color: white;
+             outline: 2px solid transparent;
+             outline-offset: 2px;
+             box-shadow: 0 0 0 2px #3b82f6;
+        }
+        .drop-zone-input.correct {
+            border-color: #16a34a;
+            background-color: #dcfce7;
+            border-style: solid;
+        }
+        .drop-zone-input.incorrect {
+            border-color: #dc2626;
+            background-color: #fee2e2;
+            border-style: solid;
+        }
+        .feedback-icon {
+            position: absolute;
+            top: 50%;
+            right: 0.5rem;
+            transform: translateY(-50%);
+            width: 1.25rem;
+            height: 1.25rem;
+            display: none;
+        }
+        .feedback-icon.correct {
+            color: #16a34a;
+        }
+        .feedback-icon.incorrect {
+            color: #dc2626;
+            cursor: pointer;
+        }
+
+        /* Button Styles */
+        .button-container {
+            margin-top: 2rem;
+            text-align: center;
+        }
+        .btn {
+            color: white;
+            font-weight: 700; /* Bold font weight */
+            font-size: 1rem; /* Increased font size */
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            border: none;
+            transition: background-color 0.2s;
+            cursor: pointer;
+            margin: 0 0.5rem;
+        }
+        .btn-green {
+            background-color: #16a34a;
+        }
+        .btn-green:hover {
+            background-color: #15803d;
+        }
+        .btn-blue {
+            background-color: #2563eb;
+        }
+        .btn-blue:hover {
+            background-color: #1d4ed8;
+        }
+        .btn:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+        .btn:focus-visible {
+            outline: 3px solid #2563eb;
+            outline-offset: 2px;
+        }
+        
+        /* Feedback Message Styles */
+        .feedback-message {
+            text-align: center;
+            margin-top: 1rem;
+            height: 1.5rem;
+            font-weight: 600;
+        }
+        .feedback-correct { color: #16a34a; }
+        .feedback-incorrect { color: #dc2626; }
+        .feedback-info { color: #ca8a04; }
+        .feedback-copied { color: #2563eb; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header class="header">
+            <h1>'Find an SOP' Prompt filler activity</h1>
+            <p>Complete the prompt by dragging words or typing them into the gaps.</p>
+        </header>
+
+        <div class="main-content">
+            <section class="section sticky-section">
+                <h2 class="section-title">Instructions</h2>
+                <p>The prompt for the 'Find an SOP' Copilot Agent is below, but it's missing nine words. Complete the gaps by dragging words from the pool or by clicking on each box and typing. Then copy and paste the complete prompt into the 'Instructions' field for your Copilot Agent.</p>
+                <h3 style="font-size: 1.125rem; font-weight: 600; color: #1e293b; margin-bottom: 0.5rem;">Word Pool</h3>
+                <div id="word-pool-container" class="word-pool">
+                    <!-- Words will be injected here by JS -->
+                </div>
+            </section>
+
+            <main class="section">
+                <h2 class="section-title">Prompt to Complete</h2>
+                <div id="prompt-content" class="prompt-text">
+                    <datalist id="word-options"></datalist>
+                    <!-- The content is dynamically generated by JS to include wrappers -->
+                </div>
+
+                <div class="button-container">
+                    <button id="check-button" class="btn btn-green">Check Answers</button>
+                    <button id="copy-button" class="btn btn-blue" disabled>Copy Final Prompt</button>
+                </div>
+                 <p id="feedback-message" class="feedback-message"></p>
+            </main>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const wordPoolContainer = document.getElementById('word-pool-container');
+        const datalist = document.getElementById('word-options');
+        const checkButton = document.getElementById('check-button');
+        const copyButton = document.getElementById('copy-button');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const promptContent = document.getElementById('prompt-content');
+
+        const words = ["answer", "Archimedes", "goal", "SOPs", "expert librarian", "access", "user", "link", "KNOWLEDGE"];
+        
+        // Security: Sanitize text content to prevent XSS
+        function sanitizeText(text) {
+            if (typeof text !== 'string') return '';
+            return text.replace(/[<>&"']/g, function(match) {
+                const escapeMap = {
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '&': '&amp;',
+                    '"': '&quot;',
+                    "'": '&#x27;'
+                };
+                return escapeMap[match];
+            }).slice(0, 100); // Limit length
+        }
+
+        // Security: Validate input is safe text only
+        function isValidInput(text) {
+            if (typeof text !== 'string') return false;
+            if (text.length > 100) return false;
+            // Allow letters, spaces, and basic punctuation only
+            return /^[a-zA-Z\s\-._]*$/.test(text);
+        }
+
+        function createPromptHTML() {
+            // Security: Using textContent and createElement instead of innerHTML
+            promptContent.textContent = ''; // Clear existing content
+            
+            const sections = [
+                {
+                    title: 'ROLE AND GOAL',
+                    paragraphs: [
+                        'You are an 1) [expert librarian] owl called Archimedes and your 2) [goal] is to help the members of the Coventry University Online (CUOL) media team find SOPs. You keep to the role of an owl and make relevant references to make this a fun interaction. Your personality is slightly pompous but you pride yourself on being accurate and your attention to detail.'
+                    ]
+                },
+                {
+                    title: 'REDUCE HALLUCINATIONS',
+                    paragraphs: [
+                        'You MUST only use information from the 3) [KNOWLEDGE] section below to answer the user\'s questions.',
+                        'Explain that you do not have 4) [access] to any information in the SOPs themselves - you can only offer information about their location. NEVER offer to give information about the content of the SOPs.',
+                        'It\'s okay if you aren\'t sure of an 5) [answer] or if there isn\'t a relevant SOP listed in the KNOWLEDGE section. In these cases, suggest that the user contacts DMTSOP@coventry.ac.uk with their query.'
+                    ]
+                },
+                {
+                    title: 'CONSTRAINTS',
+                    paragraphs: [
+                        'You MUST use British English.',
+                        'You MUST always provide a direct 6) [link] to the section of the SOP site that contains the relevant SOP.'
+                    ]
+                },
+                {
+                    title: 'STEP-BY-STEP PROCESS',
+                    paragraphs: [
+                        'If the 7) [user] asks how this works, explain that you can help them locate SOPs and templates that are stored on the CUOL media SharePoint site. However, be clear that you cannot see inside the SOPs themselves, or answer questions about the content. You can only help people locate them.',
+                        'If the user asks about a specific SOP, provide the relevant link to the containing page as per the KNOWLEDGE section below.'
+                    ]
+                },
+                {
+                    title: 'EXAMPLES / OUTPUT FORMAT',
+                    paragraphs: [
+                        'User: I\'m looking for the taxi booking SOP',
+                        '8) [Archimedes]: Ruffles feathers The Taxi Booking SOP eh? That should be on the Pre-production page. Here\'s a direct link: https://livecoventryac.sharepoint.com/sites/staff-cuol/SitePages/Planning.aspx'
+                    ]
+                },
+                {
+                    title: 'KNOWLEDGE',
+                    paragraphs: [
+                        'Pre-production: Provide the user with this link for all the Pre-production 9) [SOPs]: https://livecoventryac.sharepoint.com/sites/staff-cuol/SitePages/Planning.aspx Booking the BSB studio, Visitor car parking space booking, Hire car booking, Media Naming Convention, Room Booking, Taxi booking',
+                        'Production: Provide the user with this link for all the Production SOPs: https://livecoventryac.sharepoint.com/sites/staff-cuol/SitePages/SOP-Production.aspx Adobe After Effects, Adobe Audition, Adobe Illustrator, Adobe Media Encoder, Adobe Photoshop, Adobe Premiere Pro, Academic and CUOL staff Headshot, Asset Tiger, Audio Network, Creating a downloadable resource, Diagrams, Digital Consent Process, DMT Shootlog & rushes naming convention, Fiverr, FS5 Camera Profile, FutureLearn Images, Getty Images Usage, Video Branding',
+                        'Post-production: Provide the user with this link for all the Post-production SOPs: https://livecoventryac.sharepoint.com/sites/staff-cuol/SitePages/SOP-Post-Production.aspx Accuro, Adding metadata, Captions and transcripts, Future Learn: media upload guidance and markdown formatting, Getty Archival Process, Metadata & Mastering, Tiger Spaces',
+                        'DMT Accessibility: Provide the user with this link for information related to Accessibility and Copyright: https://livecoventryac.sharepoint.com/sites/staff-cuol/SitePages/Accessibility-and-copyright.aspx This section contains an Accessibility page and a Copyright page. Information on these pages includes: Colour contrast analyser, Contrast ratio check, Colour oracle (colour blindness simulator), CUOL Accessibility toolkit, Licences and public domain, Acknowledgements, Trademarks, Handouts – Copyright at CUOL, Copyright at CUOL for academics.',
+                        'General admin processes: Provide the user with this link for all the General admin processes SOPs: https://livecoventryac.sharepoint.com/sites/staff-cuol/SitePages/General-Processes.aspx Content Transition, CUOL Media definitions, GFS Expense Claims, How to Format Company Drives, Kuali, Mac User Password Update Process, Planon Desk Booking, VPN',
+                        'Master folder structure: Provide the user with this link if they ask about the Master folder, production template or server project template: https://livecoventryac.sharepoint.com/sites/staff-cuol/SitePages/Master.aspx',
+                        'Templates, forms and access: Provide the user with this link for Templates, forms and access: https://livecoventryac.sharepoint.com/sites/staff-cuol/SitePages/Access-and-templates.aspx CUOL powerpoint templates, Out of office messages, CUOL headed paper, Email signature template, Transcript templates, Course handout templates, Script template, Contributor consent forms, Consent to use third-party material in courses, Notices and risk assessment, Forms for permission to film on locations outside the university'
+                    ]
+                }
+            ];
+
+            const correctAnswers = ["expert librarian", "goal", "KNOWLEDGE", "access", "answer", "link", "user", "Archimedes", "SOPs"];
+            let gapIndex = 0;
+
+            sections.forEach(section => {
+                const sectionDiv = document.createElement('div');
+                sectionDiv.className = 'prompt-structure';
+
+                const title = document.createElement('h3');
+                title.textContent = section.title;
+                sectionDiv.appendChild(title);
+
+                section.paragraphs.forEach(paragraphText => {
+                    const p = document.createElement('p');
+                    
+                    // Parse text and replace [placeholder] with input fields
+                    const parts = paragraphText.split(/(\d+\)\s*\[[^\]]+\])/);
+                    
+                    parts.forEach(part => {
+                        if (/\d+\)\s*\[[^\]]+\]/.test(part)) {
+                            // This is a gap placeholder
+                            const wrapper = document.createElement('span');
+                            wrapper.className = 'drop-zone-wrapper';
+                            wrapper.setAttribute('data-correct-answer', correctAnswers[gapIndex]);
+                            
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.className = 'drop-zone-input';
+                            input.setAttribute('list', 'word-options');
+                            input.maxLength = 100; // Security: Limit input length
+                            wrapper.appendChild(input);
+
+                            const icon = document.createElement('span');
+                            icon.className = 'feedback-icon';
+                            wrapper.appendChild(icon);
+
+                            p.appendChild(wrapper);
+                            gapIndex++;
+                        } else {
+                            // Regular text
+                            const textNode = document.createTextNode(part);
+                            p.appendChild(textNode);
+                        }
+                    });
+                    
+                    sectionDiv.appendChild(p);
+                });
+                
+                promptContent.appendChild(sectionDiv);
+            });
+        }
+
+        function initializeWordPool() {
+            const sortedWords = [...words].sort(); 
+            sortedWords.forEach((word, index) => {
+                const wordEl = document.createElement('div');
+                wordEl.id = `word-${index}`;
+                wordEl.className = 'draggable-word';
+                wordEl.draggable = true;
+                wordEl.textContent = sanitizeText(word);
+                wordPoolContainer.appendChild(wordEl);
+
+                const optionEl = document.createElement('option');
+                optionEl.value = sanitizeText(word);
+                datalist.appendChild(optionEl);
+            });
+        }
+        
+        createPromptHTML();
+        initializeWordPool();
+        
+        const inputFields = document.querySelectorAll('.drop-zone-input');
+        const dropZoneWrappers = document.querySelectorAll('.drop-zone-wrapper');
+
+        wordPoolContainer.addEventListener('dragstart', e => {
+            if (e.target.classList.contains('draggable-word') && !e.target.classList.contains('used')) {
+                const wordText = e.target.textContent;
+                if (isValidInput(wordText)) {
+                    e.dataTransfer.setData('text/plain', wordText);
+                    setTimeout(() => e.target.classList.add('dragging'), 0);
+                } else {
+                    e.preventDefault();
+                }
+            } else {
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('dragend', e => {
+            if (e.target.classList.contains('draggable-word')) {
+                e.target.classList.remove('dragging');
+            }
+        });
+
+        dropZoneWrappers.forEach(wrapper => {
+            wrapper.addEventListener('dragover', e => {
+                e.preventDefault();
+                wrapper.classList.add('drag-over');
+            });
+            wrapper.addEventListener('dragleave', e => {
+                wrapper.classList.remove('drag-over');
+            });
+            wrapper.addEventListener('drop', e => {
+                e.preventDefault();
+                wrapper.classList.remove('drag-over');
+                const word = e.dataTransfer.getData('text/plain');
+                
+                // Security: Validate dropped content
+                if (isValidInput(word)) {
+                    const input = wrapper.querySelector('input');
+                    if (input) {
+                        input.value = sanitizeText(word);
+                        updateWordPoolStatus();
+                        resetFeedback();
+                    }
+                }
+            });
+            
+            // Add click event to feedback icon for clearing incorrect answers
+            const icon = wrapper.querySelector('.feedback-icon');
+            if (icon) {
+                icon.addEventListener('click', () => {
+                    if (icon.classList.contains('incorrect')) {
+                        // Clear ALL incorrect answers, not just this one
+                        document.querySelectorAll('.drop-zone-wrapper').forEach(w => {
+                            const input = w.querySelector('input');
+                            const inputIcon = w.querySelector('.feedback-icon');
+                            if (input && inputIcon && inputIcon.classList.contains('incorrect')) {
+                                input.value = '';
+                            }
+                        });
+                        updateWordPoolStatus();
+                        resetFeedback();
+                    }
+                });
+            }
+        });
+
+        function updateWordPoolStatus() {
+            const usedWords = Array.from(inputFields).map(input => 
+                sanitizeText(input.value).toLowerCase()
+            );
+            document.querySelectorAll('.draggable-word').forEach(wordEl => {
+                const wordText = sanitizeText(wordEl.textContent).toLowerCase();
+                if (usedWords.includes(wordText)) {
+                    wordEl.classList.add('used');
+                } else {
+                    wordEl.classList.remove('used');
+                }
+            });
+        }
+
+        inputFields.forEach(input => {
+            input.addEventListener('input', (e) => {
+                // Security: Validate and sanitize input
+                const value = e.target.value;
+                if (!isValidInput(value)) {
+                    e.target.value = sanitizeText(value);
+                }
+                updateWordPoolStatus();
+                resetFeedback();
+            });
+        });
+
+        function resetFeedback() {
+            inputFields.forEach(input => {
+                input.classList.remove('correct', 'incorrect');
+                const icon = input.nextElementSibling;
+                if (icon) {
+                    icon.style.display = 'none';
+                }
+            });
+            feedbackMessage.textContent = '';
+            feedbackMessage.className = 'feedback-message';
+            copyButton.disabled = true;
+        }
+
+        function checkAnswers() {
+            let allCorrect = true;
+            let filledCount = 0;
+
+            dropZoneWrappers.forEach(wrapper => {
+                const input = wrapper.querySelector('input');
+                const icon = wrapper.querySelector('.feedback-icon');
+                const correctAnswer = wrapper.dataset.correctAnswer;
+                
+                if (input && input.value.trim() !== '') {
+                    filledCount++;
+                    const sanitizedInput = sanitizeText(input.value);
+                                            if (sanitizedInput.toLowerCase() === correctAnswer.toLowerCase()) {
+                        input.classList.add('correct');
+                        input.classList.remove('incorrect');
+                        if (icon) {
+                            // Security: Safe SVG as string literals (no user input)
+                            icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="correct"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.052-.143z" clip-rule="evenodd" /></svg>`;
+                            icon.className = 'feedback-icon correct';
+                        }
+                    } else {
+                        input.classList.add('incorrect');
+                        input.classList.remove('correct');
+                        if (icon) {
+                            icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="incorrect"><path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" /></svg>`;
+                            icon.className = 'feedback-icon incorrect';
+                        }
+                        allCorrect = false;
+                    }
+                    if (icon) {
+                        icon.style.display = 'block';
+                    }
+                } else {
+                    allCorrect = false;
+                }
+            });
+            
+            if (filledCount < inputFields.length) {
+                 feedbackMessage.textContent = 'Please fill in all the gaps before checking.';
+                 feedbackMessage.className = 'feedback-message feedback-info';
+                 return;
+            }
+
+            if (allCorrect) {
+                feedbackMessage.textContent = 'All correct! You can now copy the prompt.';
+                feedbackMessage.className = 'feedback-message feedback-correct';
+                copyButton.disabled = false;
+            } else {
+                feedbackMessage.textContent = 'Some answers are incorrect. Please try again.';
+                feedbackMessage.className = 'feedback-message feedback-incorrect';
+                copyButton.disabled = true;
+            }
+        }
+
+        function generateFullPromptText() {
+            let fullText = '';
+            const promptStructures = document.querySelectorAll('#prompt-content .prompt-structure');
+
+            promptStructures.forEach(structure => {
+                const title = structure.querySelector('h3');
+                if (title) {
+                    fullText += sanitizeText(title.textContent.trim()) + '\n';
+                }
+
+                structure.querySelectorAll('p').forEach(p => {
+                    let lineText = '';
+                    
+                    p.childNodes.forEach(node => {
+                        if (node.nodeType === Node.TEXT_NODE) {
+                            lineText += node.textContent;
+                        } else if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains('drop-zone-wrapper')) {
+                            const input = node.querySelector('input');
+                            const word = input ? sanitizeText(input.value) || '______' : '______';
+                            lineText += ` ${word} `;
+                        }
+                    });
+                    
+                    lineText = lineText.replace(/\s+/g, ' ').trim();
+                    if (lineText) {
+                        fullText += lineText + '\n';
+                    }
+                });
+                
+                fullText += '\n';
+            });
+
+            return fullText.trim();
+        }
+
+        checkButton.addEventListener('click', checkAnswers);
+
+        copyButton.addEventListener('click', async () => {
+            const fullPrompt = generateFullPromptText();
+            
+            try {
+                // Security: Use modern clipboard API with fallback
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(fullPrompt);
+                    feedbackMessage.textContent = 'Prompt copied to clipboard!';
+                    feedbackMessage.className = 'feedback-message feedback-copied';
+                } else {
+                    // Fallback for older browsers or non-secure contexts
+                    const tempTextarea = document.createElement('textarea');
+                    tempTextarea.value = fullPrompt;
+                    tempTextarea.style.position = 'absolute';
+                    tempTextarea.style.left = '-9999px';
+                    document.body.appendChild(tempTextarea);
+                    tempTextarea.select();
+                    try {
+                        document.execCommand('copy');
+                        feedbackMessage.textContent = 'Prompt copied to clipboard!';
+                        feedbackMessage.className = 'feedback-message feedback-copied';
+                    } catch (err) {
+                        feedbackMessage.textContent = 'Please manually copy the text.';
+                        feedbackMessage.className = 'feedback-message feedback-info';
+                    }
+                    document.body.removeChild(tempTextarea);
+                }
+            } catch (err) {
+                feedbackMessage.textContent = 'Copy failed. Please manually select and copy the text.';
+                feedbackMessage.className = 'feedback-message feedback-info';
+            }
+        });
+    });
+    </script>
+</body>
+</html>

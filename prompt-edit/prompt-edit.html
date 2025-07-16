@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Copilot Agent Prompt Editor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.8/purify.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #020617;
+            line-height: 1.6;
+        }
+        
+        /* Container and Layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        
+        @media (min-width: 768px) {
+            .container {
+                padding: 2rem;
+            }
+        }
+        
+        .max-w-4xl {
+            max-width: 896px;
+            margin: 0 auto;
+        }
+        
+        /* Header Styles */
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.5rem;
+        }
+        
+        @media (min-width: 768px) {
+            h1 {
+                font-size: 3rem;
+            }
+        }
+        
+        header p {
+            font-size: 1.125rem;
+            color: #475569;
+        }
+        
+        /* Card Styles */
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            border: 1px solid #e2e8f0;
+        }
+        
+        .card-large {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+        
+        .mb-8 {
+            margin-bottom: 2rem;
+        }
+        
+        /* Typography */
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+        
+        .text-lg {
+            font-size: 1.125rem;
+        }
+        
+        .font-semibold {
+            font-weight: 600;
+        }
+        
+        .text-slate-700 {
+            color: #334155;
+        }
+        
+        .text-slate-800 {
+            color: #1e293b;
+        }
+        
+        .text-slate-600 {
+            color: #475569;
+        }
+        
+        /* Spacing */
+        .space-y-4 > * + * {
+            margin-top: 1rem;
+        }
+        
+        .space-y-6 > * + * {
+            margin-top: 1.5rem;
+        }
+        
+        .mt-2 {
+            margin-top: 0.5rem;
+        }
+        
+        .mt-4 {
+            margin-top: 1rem;
+        }
+        
+        .mt-6 {
+            margin-top: 1.5rem;
+        }
+        
+        .mt-8 {
+            margin-top: 2rem;
+        }
+        
+        .mb-4 {
+            margin-bottom: 1rem;
+        }
+        
+        .pl-4 {
+            padding-left: 1rem;
+        }
+        
+        .pt-2 {
+            padding-top: 0.5rem;
+        }
+        
+        /* Lists */
+        .list-disc {
+            list-style-type: disc;
+        }
+        
+        .list-inside {
+            list-style-position: inside;
+        }
+        
+        ul {
+            margin-left: 1rem;
+        }
+        
+        li {
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Links */
+        a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            color: #1d4ed8;
+            text-decoration: underline;
+        }
+        
+        /* Buttons */
+        button {
+            display: inline-block;
+            font-weight: 700;
+            text-align: center;
+            vertical-align: middle;
+            cursor: pointer;
+            border: 1px solid transparent;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+        
+        .btn-primary {
+            background-color: #2563eb;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+        }
+        
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+        
+        .btn-secondary {
+            background-color: #e2e8f0;
+            color: #1e293b;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #cbd5e1;
+        }
+        
+        .btn-purple {
+            background-color: #9333ea;
+            color: white;
+        }
+        
+        .btn-purple:hover {
+            background-color: #7c3aed;
+        }
+        
+        .btn-purple:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-purple:disabled:hover {
+            background-color: #9333ea;
+        }
+        
+        /* Text Center */
+        .text-center {
+            text-align: center;
+        }
+        
+        /* Break Words */
+        .break-words {
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+        
+        /* WCAG AAA compliant colors: Blue on light yellow for high contrast and visibility */
+        .editable, .highlight-yellow {
+            background-color: #fef9c3; /* yellow-100 */
+            color: #1e3a8a; /* blue-800 */
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .editable {
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            border-bottom: 2px dashed #9333ea; /* purple-600 */
+        }
+        .editable:hover, .editable:focus {
+            background-color: #fde047; /* yellow-400 */
+            outline: 2px solid #1e3a8a; /* blue-800 */
+            outline-offset: 2px;
+        }
+        /* Ensure high contrast for prompt structure text */
+        .prompt-structure h3 {
+            color: #1e293b; /* slate-800 */
+        }
+        .prompt-text {
+            color: #334155; /* slate-700 */
+            line-height: 1.8;
+        }
+        /* Modal styles */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+        }
+        .modal-backdrop.hidden {
+            display: none !important;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        /* Form Controls */
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 12rem;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .relative {
+            position: relative;
+        }
+        
+        /* Custom focus rings for better visibility */
+        *:focus-visible {
+            outline: 3px solid #2563eb; /* blue-600 */
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+        /* Specificity to override for buttons */
+        .modal-content button:focus-visible {
+            outline: 3px solid #2563eb !important;
+        }
+        /* Styling for the details/summary dropdown */
+        details summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: #1e293b; /* slate-800 */
+            transition: color 0.2s;
+        }
+        details summary:hover {
+            color: #0f172a; /* slate-900 */
+        }
+        details[open] summary {
+            margin-bottom: 0.5rem;
+        }
+        /* Error message styling */
+        .error-message {
+            color: #991b1b; /* red-800 - AAA compliant */
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+        .error-message.hidden {
+            display: none !important;
+        }
+        .error-message:not(.hidden) {
+            display: block;
+        }
+        .textarea-error {
+            border-color: #991b1b !important; /* red-800 - AAA compliant */
+            box-shadow: 0 0 0 1px #991b1b !important;
+        }
+        .char-counter {
+            font-size: 0.875rem;
+            color: #334155; /* slate-700 - AAA compliant */
+            text-align: right;
+            margin-top: 0.25rem;
+        }
+        .char-counter.warning {
+            color: #92400e; /* amber-800 - AAA compliant */
+        }
+        .char-counter.error {
+            color: #991b1b; /* red-800 - AAA compliant */
+        }
+        
+        /* Flex utilities */
+        .flex {
+            display: flex;
+        }
+        
+        .justify-end {
+            justify-content: flex-end;
+        }
+        
+        .space-x-4 > * + * {
+            margin-left: 1rem;
+        }
+        
+        /* Height utilities */
+        .h-5 {
+            height: 1.25rem;
+        }
+        
+        /* Colors */
+        .text-green-600 {
+            color: #047857; /* green-700 - AAA compliant */
+        }
+        
+        .text-red-600 {
+            color: #991b1b; /* red-800 - AAA compliant */
+        }
+        
+        /* Transition */
+        .transition-colors {
+            transition: color 0.2s, background-color 0.2s;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .modal-content {
+                width: 95%;
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container">
+
+        <header>
+            <h1>'Team quiz' Prompt edit activity</h1>
+            <p>An interactive tool to practice building effective prompts.</p>
+        </header>
+
+        <div class="max-w-4xl">
+
+            <!-- Instructions Section -->
+            <aside class="card mb-8">
+                <h2>Task Instructions</h2>
+                <div class="space-y-4 text-slate-700">
+                    <div>
+                        <h3>What?</h3>
+                        <p>In this activity, you need to create a Copilot Agent that quizzes people on how well they know your team. Edit the prompt below by changing the parts <span class="highlight-yellow">highlighted in yellow</span>. When you're finished, copy and paste into a Copilot Agent instruction box.</p>
+                    </div>
+                    <div>
+                        <details>
+                            <summary>Why?</summary>
+                            <div class="space-y-4 mt-2">
+                                <p>Obviously, creating an Agent that quizzes people about how well they know your team may not give you big productivity wins (although it may be useful for new starters). I'm asking you to do it because more useful Agents normally take longer to create, as you need to carefully curate the information you give them, and the purpose here is just to gain familiarity with the structure of good prompts. This agent also demonstrates the three most useful capabilities of Agents:</p>
+                                <ul class="list-disc list-inside mt-2 space-y-2 pl-4">
+                                    <li><strong>You can make Agents that restrict their answers to information you've provided</strong> (here, you provide information about your team that a general AI wouldn't have).</li>
+                                    <li><strong>You can make Agents that will lead interactive learning activities based on level-appropriate, accurate content</strong> (here, it's a quiz, but it could ask open questions, ask the student to teach the AI about a topic, guide them through a reflection, or conduct a role-play).</li>
+                                    <li><strong>Agents can provide or re-organise information in a specific format</strong> (here, we are specifying the format of the quiz, and the table for the answers).</li>
+                                </ul>
+                                <p class="mt-4">Once you've practised in this scaffolded way, hopefully you can go away and create your own Agents from scratch that will be more relevant to your jobs!</p>
+                            </div>
+                        </details>
+                    </div>
+                    <div>
+                        <details>
+                            <summary>Example</summary>
+                            <div class="pt-2">
+                                <a href="https://m365.cloud.microsoft/apps/?templatedAppId=9e2962b8-7eae-4124-86f3-1799090725e1&templateInstanceId=9f81553a-0cd7-48c6-bbde-d181dae5f7fa&environment=Default-4b18ab9a-3765-4abe-ac7c-0e0d398afd4f&source=embedded-builder" target="_blank" rel="noopener noreferrer">
+                                    Copilot Agent - How well do you know the Ed Tech Team?
+                                </a>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Prompt Editor Section -->
+            <main id="prompt-container" class="card-large">
+                <h2>Prompt to Edit</h2>
+                
+                <div id="prompt-content" class="space-y-6 prompt-text">
+                    <div class="prompt-structure">
+                        <h3 class="font-semibold text-lg">ROLE AND GOAL</h3>
+                        <p>You are a socratic tutor and you help people learn for themselves. Your goal is to quiz my CUOL colleagues on how well they know my team (<span id="editable-1" class="editable" tabindex="0" role="button" aria-haspopup="dialog" data-original="the Ed Tech Team">the Ed Tech Team</span>).</p>
+                    </div>
+
+                    <div class="prompt-structure">
+                        <h3 class="font-semibold text-lg">STEP-BY-STEP PROCESS</h3>
+                        <p>Begin by asking the user: "On a scale of 1 to 5, how well do you believe you know <span id="editable-2" class="editable" tabindex="0" role="button" aria-haspopup="dialog" data-original="the Ed Tech team">the Ed Tech team</span>?"</p>
+                        <p>Then, present the following five multiple-choice questions, one at a time. Make sure the distractors for multiple-choice questions are plausible (similar in length and type to the correct answer). For the first question, the answer should be B, for the second it should be C, for the third it should be A, for the fourth it should be D, for the fifth it should be D. Wait for the user's response after each question:</p>
+                        <p>Questions:</p>
+                        <p><span id="editable-3" class="editable" tabindex="0" role="button" aria-haspopup="dialog" data-original="1) How many cities are the Ed Tech team split across?
+2) Who is the leader of the Ed Tech team?
+3) How can you find out more about the Ed Tech team and individual people's specialism?
+4) What are the 5 areas that the Ed Tech team work across?
+5) How can you book onto Ed Tech training?">1) How many cities are the Ed Tech team split across?<br>2) Who is the leader of the Ed Tech team?<br>3) How can you find out more about the Ed Tech team and individual people's specialism?<br>4) What are the 5 areas that the Ed Tech team work across?<br>5) How can you book onto Ed Tech training?</span></p>
+                        <p>After each question, provide instant feedback with the correct answer.</p>
+                        <p>After all answers are collected, present a results table with the following columns: Question, Your answer, Correct answer.</p>
+                        <p>Then, give the user a final score out of 5.</p>
+                        <p>If they score highly, congratulate them.</p>
+                        <p>If they score poorly, encourage them to study my team more closely and try again.</p>
+                    </div>
+
+                    <div class="prompt-structure">
+                        <h3 class="font-semibold text-lg">REDUCE HALLUCINATIONS</h3>
+                        <p>Only answer using the information provided in the KNOWLEDGE section.</p>
+                        <p>If the user asks a question you cannot answer from that information, respond with: "<span id="editable-4" class="editable" tabindex="0" role="button" aria-haspopup="dialog" data-original="Unfortunately I don't have that information - you'd be better to ask the Ed Tech team directly. You can email them at learningenhance@coventry.ac.uk.">Unfortunately I don't have that information - you'd be better to ask the Ed Tech team directly. You can email them at learningenhance@coventry.ac.uk.</span>"</p>
+                    </div>
+                    
+                    <div class="prompt-structure">
+                        <h3 class="font-semibold text-lg">CONSTRAINTS</h3>
+                        <p>Use British English</p>
+                        <p>PRIORITY INSTRUCTION: Only reveal information about my team AFTER people have attempted the relevant question in the quiz. Giving away information before the relevant question ruins it because people don't get a chance to guess.</p>
+                        <p>If the KNOWLEDGE section include links, you MUST provide these as clickable buttons in the table of answers you provide after the quiz.</p>
+                        <p>If you include names of people, make sure they reflect the diversity of CUOL.</p>
+                    </div>
+
+                    <div class="prompt-structure">
+                        <h3 class="font-semibold text-lg">EXAMPLES / OUTPUT FORMAT</h3>
+                        <p>After the quiz, present a table with the following headings:</p>
+                        <p>Question | Your answer | Correct answer</p>
+                    </div>
+
+                    <div class="prompt-structure">
+                        <h3 class="font-semibold text-lg">KNOWLEDGE</h3>
+                        <p class="break-words"><span id="editable-5" class="editable" tabindex="0" role="button" aria-haspopup="dialog" data-original="1) Locations: Coventry, London, Scarborough
+2) Team leader: Imran Ali, Head of Education Technology
+3) How to find out more: Visit the Ed Tech team's page on the CUOL Sharepoint site: https://livecoventryac.sharepoint.com/sites/cuol-staff/SitePages/Education-Technology-Team.aspx
+4) 5 areas of Ed Tech work: Triage/Problem-solving; Small projects; Large projects; Innovations and Future thinking; Training, advice and guidance.
+5) Booking training: Visit the Ed Tech training page on the Teaching Knowledge Base: https://teach.coventry.domains/digital-fluency/education-technology-training-calendar/">1) Locations: Coventry, London, Scarborough<br>2) Team leader: Imran Ali, Head of Education Technology<br>3) How to find out more: Visit the Ed Tech team's page on the CUOL Sharepoint site: https://livecoventryac.sharepoint.com/sites/cuol-staff/SitePages/Education-Technology-Team.aspx<br>4) 5 areas of Ed Tech work: Triage/Problem-solving; Small projects; Large projects; Innovations and Future thinking; Training, advice and guidance.<br>5) Booking training: Visit the Ed Tech training page on the Teaching Knowledge Base: https://teach.coventry.domains/digital-fluency/education-technology-training-calendar/</span></p>
+                    </div>
+                </div>
+
+                <div class="text-center mt-8">
+                    <button id="copy-button" class="btn-primary">
+                        Copy Final Prompt to Clipboard
+                    </button>
+                    <p id="copy-feedback" class="h-5 mt-2"></p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-content">
+            <h2 id="modal-title">Edit Content</h2>
+            <p class="mb-4 text-slate-600">Enter your new text below. For questions or knowledge, you can edit multiple lines.</p>
+            <div class="relative">
+                <textarea id="modal-textarea" maxlength="5000"></textarea>
+                <div id="char-counter" class="char-counter">0 / 5000 characters</div>
+            </div>
+            <div id="error-message" class="error-message hidden"></div>
+            <div class="flex justify-end space-x-4 mt-6">
+                <button id="modal-cancel" class="btn-secondary">Cancel</button>
+                <button id="modal-save" class="btn-purple">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+        <div class="modal-content">
+            <h2 id="confirm-title">Unsaved Changes</h2>
+            <p class="mb-6 text-slate-600">You have unsaved changes. Are you sure you want to close without saving?</p>
+            <div class="flex justify-end space-x-4">
+                <button id="confirm-stay" class="btn-secondary">Keep Editing</button>
+                <button id="confirm-discard" class="btn-purple">Discard Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Element References ---
+            const editableSpans = document.querySelectorAll('.editable');
+            const modal = document.getElementById('edit-modal');
+            const modalTextarea = document.getElementById('modal-textarea');
+            const saveButton = document.getElementById('modal-save');
+            const cancelButton = document.getElementById('modal-cancel');
+            const copyButton = document.getElementById('copy-button');
+            const copyFeedback = document.getElementById('copy-feedback');
+            const errorMessage = document.getElementById('error-message');
+            const charCounter = document.getElementById('char-counter');
+            
+            // Confirmation modal elements
+            const confirmModal = document.getElementById('confirm-modal');
+            const confirmStayButton = document.getElementById('confirm-stay');
+            const confirmDiscardButton = document.getElementById('confirm-discard');
+            
+            let activeEditableSpan = null; // To store the span being edited
+
+            // --- Security and Validation Functions ---
+
+            /**
+             * Comprehensive input validation
+             * @param {string} input - The user input to validate
+             * @returns {object} - {isValid: boolean, error: string}
+             */
+            function validateInput(input) {
+                // Check length
+                if (input.length > 5000) {
+                    return { isValid: false, error: 'Content must be less than 5000 characters' };
+                }
+                
+                // Check for potentially dangerous patterns
+                const dangerousPatterns = [
+                    /<script[^>]*>.*?<\/script>/gsi,
+                    /javascript:/gi,
+                    /vbscript:/gi,
+                    /data:/gi,
+                    /on\w+\s*=/gi, // Event handlers like onclick=
+                    /<iframe[^>]*>/gi,
+                    /<object[^>]*>/gi,
+                    /<embed[^>]*>/gi,
+                    /<link[^>]*>/gi,
+                    /<meta[^>]*>/gi,
+                    /<style[^>]*>.*?<\/style>/gsi
+                ];
+                
+                for (const pattern of dangerousPatterns) {
+                    if (pattern.test(input)) {
+                        return { isValid: false, error: 'Content contains potentially unsafe elements' };
+                    }
+                }
+                
+                // Check for excessive HTML tags
+                const htmlTagCount = (input.match(/<[^>]*>/g) || []).length;
+                if (htmlTagCount > 20) {
+                    return { isValid: false, error: 'Content contains too many HTML tags' };
+                }
+                
+                return { isValid: true, error: '' };
+            }
+
+            /**
+             * Sanitize HTML content using DOMPurify
+             * @param {string} html - The HTML content to sanitize
+             * @returns {string} - Sanitized HTML
+             */
+            function sanitizeHTML(html) {
+                // Configure DOMPurify to allow only safe tags
+                const config = {
+                    ALLOWED_TAGS: ['br', 'p', 'strong', 'em', 'u'],
+                    ALLOWED_ATTR: [],
+                    FORBID_ATTR: ['style', 'class', 'id', 'onclick', 'onload', 'onerror'],
+                    FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'link', 'meta', 'style'],
+                    KEEP_CONTENT: true
+                };
+                
+                return DOMPurify.sanitize(html, config);
+            }
+
+            /**
+             * Safely convert newlines to <br> tags and sanitize
+             * @param {string} text - The text to process
+             * @returns {string} - Processed and sanitized HTML
+             */
+            function safeTextToHTML(text) {
+                // First escape HTML entities
+                const escaped = text.replace(/&/g, '&amp;')
+                                   .replace(/</g, '&lt;')
+                                   .replace(/>/g, '&gt;')
+                                   .replace(/"/g, '&quot;')
+                                   .replace(/'/g, '&#39;');
+                
+                // Then convert newlines to <br> tags
+                const withBreaks = escaped.replace(/\n/g, '<br>');
+                
+                // Finally sanitize with DOMPurify
+                return sanitizeHTML(withBreaks);
+            }
+
+            /**
+             * Safely convert <br> tags back to newlines for editing
+             * @param {string} html - The HTML content
+             * @returns {string} - Text with newlines
+             */
+            function safeHTMLToText(html) {
+                // Create a temporary element to safely extract text
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                
+                // Replace <br> tags with newlines
+                const text = tempDiv.innerHTML.replace(/<br\s*\/?>/gi, '\n');
+                
+                // Use textContent to safely extract plain text
+                tempDiv.innerHTML = text;
+                return tempDiv.textContent || tempDiv.innerText || '';
+            }
+
+            /**
+             * Update character counter
+             * @param {number} currentLength - Current text length
+             * @param {number} maxLength - Maximum allowed length
+             */
+            function updateCharCounter(currentLength, maxLength) {
+                charCounter.textContent = `${currentLength} / ${maxLength} characters`;
+                
+                // Remove existing classes
+                charCounter.classList.remove('warning', 'error');
+                
+                if (currentLength > maxLength * 0.9) {
+                    charCounter.classList.add('warning');
+                }
+                if (currentLength > maxLength) {
+                    charCounter.classList.add('error');
+                }
+            }
+
+            /**
+             * Show error message
+             * @param {string} message - Error message to display
+             */
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.classList.remove('hidden');
+                modalTextarea.classList.add('textarea-error');
+                saveButton.disabled = true;
+                saveButton.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+
+            /**
+             * Hide error message
+             */
+            function hideError() {
+                errorMessage.classList.add('hidden');
+                modalTextarea.classList.remove('textarea-error');
+                saveButton.disabled = false;
+                saveButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+
+            // --- Modal Functions ---
+
+            /**
+             * Shows the modal and prepares it for editing a specific span.
+             * @param {HTMLElement} spanElement The editable span that was clicked.
+             */
+            function showModal(spanElement) {
+                activeEditableSpan = spanElement;
+                // Get the original text safely
+                const originalText = spanElement.dataset.original || safeHTMLToText(spanElement.innerHTML);
+                modalTextarea.value = originalText;
+                updateCharCounter(originalText.length, 5000);
+                modal.classList.remove('hidden');
+                modalTextarea.focus();
+                hideError();
+            }
+
+            /**
+             * Show confirmation modal
+             */
+            function showConfirmModal() {
+                confirmModal.classList.remove('hidden');
+                confirmStayButton.focus();
+            }
+
+            /**
+             * Hide confirmation modal
+             */
+            function hideConfirmModal() {
+                confirmModal.classList.add('hidden');
+                modalTextarea.focus(); // Return focus to the edit modal
+            }
+
+            /**
+             * Safely close modal with unsaved changes check
+             */
+            function safeCloseModal() {
+                if (!activeEditableSpan) {
+                    hideModal();
+                    return;
+                }
+                
+                const currentText = modalTextarea.value;
+                const originalText = activeEditableSpan.dataset.original || safeHTMLToText(activeEditableSpan.innerHTML);
+                
+                // Check if there are unsaved changes
+                if (currentText !== originalText) {
+                    showConfirmModal();
+                } else {
+                    hideModal();
+                }
+            }
+
+            /**
+             * Hides the modal and resets the active span.
+             */
+            function hideModal() {
+                modal.classList.add('hidden');
+                if(activeEditableSpan) {
+                    activeEditableSpan.focus();
+                }
+                activeEditableSpan = null;
+                hideError();
+            }
+
+            /**
+             * Saves the content from the modal back to the active span.
+             */
+            function saveContent() {
+                if (!activeEditableSpan) return;
+                
+                const inputText = modalTextarea.value;
+                const validation = validateInput(inputText);
+                
+                if (!validation.isValid) {
+                    showError(validation.error);
+                    return;
+                }
+                
+                // Sanitize and safely set the content
+                const sanitizedHTML = safeTextToHTML(inputText);
+                activeEditableSpan.innerHTML = sanitizedHTML;
+                
+                // Update the data-original attribute for future edits
+                activeEditableSpan.dataset.original = inputText;
+                
+                hideModal();
+            }
+            
+            /**
+             * Generates the full prompt text from the edited content for copying.
+             * @returns {string} The complete, formatted prompt text.
+             */
+            function generateFullPromptText() {
+                const content = document.getElementById('prompt-content');
+                let fullText = '';
+                
+                content.querySelectorAll('.prompt-structure').forEach(section => {
+                    const title = section.querySelector('h3').textContent;
+                    fullText += `${title}\n`;
+                    
+                    section.querySelectorAll('p').forEach(p => {
+                        // Safely extract text content
+                        const textContent = safeHTMLToText(p.innerHTML);
+                        fullText += textContent + '\n';
+                    });
+                    
+                    fullText += '\n';
+                });
+                
+                return fullText.trim().replace(/\n\n\n+/g, '\n\n');
+            }
+
+            // --- Event Listeners ---
+
+            // Character counter for textarea
+            modalTextarea.addEventListener('input', (e) => {
+                const currentLength = e.target.value.length;
+                updateCharCounter(currentLength, 5000);
+                
+                // Real-time validation
+                const validation = validateInput(e.target.value);
+                if (!validation.isValid) {
+                    showError(validation.error);
+                } else {
+                    hideError();
+                }
+            });
+
+            editableSpans.forEach(span => {
+                span.addEventListener('click', () => showModal(span));
+                span.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        showModal(span);
+                    }
+                });
+            });
+
+            saveButton.addEventListener('click', saveContent);
+            cancelButton.addEventListener('click', safeCloseModal);
+
+            // Confirmation modal event listeners
+            confirmStayButton.addEventListener('click', hideConfirmModal);
+            confirmDiscardButton.addEventListener('click', () => {
+                hideConfirmModal();
+                hideModal();
+            });
+
+            // Enhanced keyboard navigation
+            modalTextarea.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    safeCloseModal();
+                } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    // Ctrl+Enter or Cmd+Enter to save
+                    e.preventDefault();
+                    saveContent();
+                }
+            });
+
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    if (!confirmModal.classList.contains('hidden')) {
+                        hideConfirmModal();
+                    } else if (!modal.classList.contains('hidden')) {
+                        safeCloseModal();
+                    }
+                }
+            });
+            
+            modal.addEventListener('click', (e) => {
+                if(e.target === modal) {
+                    safeCloseModal();
+                }
+            });
+
+            confirmModal.addEventListener('click', (e) => {
+                if(e.target === confirmModal) {
+                    hideConfirmModal();
+                }
+            });
+
+            copyButton.addEventListener('click', () => {
+                try {
+                    const fullPrompt = generateFullPromptText();
+                    
+                    // Use modern clipboard API if available
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(fullPrompt).then(() => {
+                            copyFeedback.textContent = 'Copied to clipboard!';
+                            copyFeedback.classList.remove('text-red-600');
+                            copyFeedback.classList.add('text-green-600');
+                        }).catch(() => {
+                            fallbackCopyToClipboard(fullPrompt);
+                        });
+                    } else {
+                        fallbackCopyToClipboard(fullPrompt);
+                    }
+                } catch (error) {
+                    copyFeedback.textContent = 'Failed to copy. Please try again.';
+                    copyFeedback.classList.remove('text-green-600');
+                    copyFeedback.classList.add('text-red-600');
+                }
+
+                setTimeout(() => {
+                    copyFeedback.textContent = '';
+                    copyFeedback.classList.remove('text-red-600', 'text-green-600');
+                }, 3000);
+            });
+
+            /**
+             * Fallback clipboard copy method
+             * @param {string} text - Text to copy
+             */
+            function fallbackCopyToClipboard(text) {
+                const tempTextarea = document.createElement('textarea');
+                tempTextarea.value = text;
+                tempTextarea.style.position = 'fixed';
+                tempTextarea.style.left = '-9999px';
+                document.body.appendChild(tempTextarea);
+                tempTextarea.select();
+                
+                try {
+                    document.execCommand('copy');
+                    copyFeedback.textContent = 'Copied to clipboard!';
+                    copyFeedback.classList.remove('text-red-600');
+                    copyFeedback.classList.add('text-green-600');
+                } catch (err) {
+                    copyFeedback.textContent = 'Failed to copy. Please try selecting and copying manually.';
+                    copyFeedback.classList.remove('text-green-600');
+                    copyFeedback.classList.add('text-red-600');
+                }
+                
+                document.body.removeChild(tempTextarea);
+            }
+        });
+    </script>
+</body>
+</html>

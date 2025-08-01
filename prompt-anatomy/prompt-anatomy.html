@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crafting Effective Prompts: A Guide for Educators</title>
+    <style>
+        /* General Body and Font Styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 1rem; /* Adjusted padding for mobile */
+            background-color: #f9fafb;
+            color: #000000; /* Black text for all content by default */
+        }
+
+        /* Main Container for the content */
+        .container {
+            max-width: 1400px; /* Increased max-width for wider layouts */
+            margin: 0 auto;
+        }
+
+        /* Main Title Styling */
+        h1 {
+            text-align: center;
+            color: #1f2937;
+            margin-bottom: 2.5rem;
+            font-size: 2.25rem;
+        }
+
+        /* Introduction Section */
+        .intro-section {
+            max-width: 800px;
+            margin: 0 auto 2.5rem auto;
+            font-size: 1.1rem;
+        }
+        
+        .intro-section p {
+            margin-bottom: 1.5rem;
+        }
+
+        .intro-section ul {
+            padding-left: 20px;
+            margin-top: 0;
+        }
+        
+        .intro-section li {
+            margin-bottom: 0.5rem;
+        }
+
+        .intro-dropdown {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            background-color: #ffffff;
+            overflow: hidden;
+        }
+
+        .intro-dropdown .example-dropdown {
+             background-color: transparent;
+             border: none;
+             font-weight: 600;
+             margin-top: 0;
+        }
+        
+        .intro-dropdown .example-content {
+            border: none;
+            border-top: 1px solid #e5e7eb;
+            border-radius: 0;
+            margin-top: 0;
+            padding: 1rem 1.5rem 1.5rem;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 1rem;
+            white-space: normal;
+        }
+        
+        /* Grid container for sections */
+        .sections-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* Mobile-first: single column */
+            gap: 1.5rem;
+        }
+
+        /* Section Styling */
+        .section {
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            overflow: hidden; /* Ensures the header's rounded corners are visible */
+            display: flex; /* Use flexbox for better internal alignment */
+            flex-direction: column; /* Stack header and content vertically */
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+        }
+
+        .section-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .section-icon {
+            margin-right: 1rem;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .section-icon svg {
+            width: 40px; /* Consistent icon size */
+            height: 40px; /* Consistent icon size */
+        }
+
+        .section-content {
+            padding: 1rem 1.5rem 1.5rem;
+            flex-grow: 1; /* Allow content to fill available space */
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .content-main {
+            flex-grow: 1; /* This pushes the example dropdown to the bottom */
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .section-content p {
+            margin-bottom: 1rem;
+        }
+        
+        .code-wrapper {
+            margin-top: auto; /* Pushes the code box to the bottom of the .content-main area */
+        }
+
+        .section-content code {
+            background-color: #ffffff;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-bottom: 0.25rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        /* Dropdown for Examples */
+        .example-dropdown {
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+
+        .example-dropdown:hover {
+            background-color: #f0f0f0;
+        }
+        
+        /* Style for keyboard focus */
+        .example-dropdown:focus-visible {
+            outline: none;
+            box-shadow: inset 0 0 0 2px #2563eb;
+        }
+        
+        .example-dropdown .arrow {
+            transition: transform 0.3s ease;
+        }
+
+        .example-dropdown.active .arrow {
+            transform: rotate(90deg);
+        }
+
+        .example-content {
+            display: none; /* Hidden by default */
+            margin-top: 0.5rem;
+            padding: 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            background-color: #ffffff;
+            white-space: pre-wrap;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        /* Color-coded section styles */
+        .role-goal { background-color: rgb(254, 249, 231); }
+        .role-goal .section-header { color: rgb(133 77 14); background-color: rgb(254 240 138); }
+        
+        .step-by-step { background-color: rgb(254, 247, 237); }
+        .step-by-step .section-header { color: rgb(154 52 18); background-color: rgb(254 215 170); }
+
+        .constraints { background-color: rgb(239, 246, 255); }
+        .constraints .section-header { color: rgb(30 64 175); background-color: rgb(191 219 254); }
+
+        .examples-output { background-color: rgb(240, 253, 244); }
+        .examples-output .section-header { color: rgb(22 101 52); background-color: rgb(187 247 208); }
+
+        .context-knowledge { background-color: rgb(250, 245, 255); }
+        .context-knowledge .section-header { color: rgb(107 33 168); background-color: rgb(233 213 255); }
+
+        .reduce-hallucination { background-color: rgb(255, 240, 246); }
+        .reduce-hallucination .section-header { color: rgb(157 23 77); background-color: rgb(251 207 232); }
+
+        /* --- Responsive Grid Layouts --- */
+        
+        /* Medium screens (e.g., tablets, small desktops) - 2 columns */
+        @media (min-width: 768px) {
+            body {
+                padding: 2rem;
+            }
+            .sections-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Large screens (e.g., desktops) - 3 columns */
+        @media (min-width: 1280px) {
+            .sections-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Anatomy of a Good Prompt</h1>
+
+        <div class="intro-section">
+            <p>If you want AI to give you good quality, consistent results, it's helpful to think carefully about the instructions – or 'prompts' – you provide. Effective AI prompts don't necessarily follow a fixed structure, but this page aims to help you consider common elements you may want to experiment with.</p>
+            
+            <div class="intro-dropdown">
+                <div class="example-dropdown">
+                    <span>What skills are needed to write 'good' prompts?</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="example-content">
+                    <p>The ability to write 'good' instructions for AI is a mixture of general communication skills and knowledge of the limitations of 'large language models' (which is the technology that powers tools like Chat GPT and Copilot):</p>
+                    <ul>
+                        <li><b>Communication skills</b> – Explaining what you want the AI to do, how it should do it, and giving it the contextual information it needs to perform its task successfully.</li>
+                        <li><b>Large-language model limitations</b> – For example, their answers are based on probabilty rather than the retrieval of facts from a database, they work better when tasks are broken down into smaller parts or even separate conversations, they don't know everything and they are prone to speculate unless explicitly told not to.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="intro-dropdown">
+                <div class="example-dropdown">
+                    <span>How far can good prompting go?</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="example-content">
+                    <p>It's important to recognise that <strong>with good prompting, you can improve AI's performance, but you can't get it to do things it's not capable of!</strong> For example, if you want to accurately process large amounts of data, a probablistic large-language model is likely not the best tool for the job, as given the same input it may not always return the same output. However, you may be able to <strong>ask AI to write code to process the data</strong>, and code <strong>is</strong> determistic - given the same input, it will give you the same output.</p>
+                </div>
+            </div>
+
+            <div class="intro-dropdown">
+                <div class="example-dropdown">
+                    <span>How can I practise?</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="example-content">
+                    <p>Once you are familiar with the structure of effective prompts, you can practise identifying the different components in some example prompts using this 'prompt painter' game: <a href="https://edtechtools.coventry.domains/prompt-games/prompt-painter.html" target="_blank" rel="noopener noreferrer">Help Robot Paint Prompts!</a></p>
+                    <p>If you want to try writing your own prompts with this structure, you can use this template: <a href="https://edtechtools.coventry.domains/prompt-template/prompt-template.html" target="_blank" rel="noopener noreferrer">Copilot Agent Prompt Builder</a></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="sections-grid">
+            <!-- ROLE AND GOAL Section -->
+            <div class="section role-goal">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgb(133 77 14)"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    </div>
+                    <h2>ROLE AND GOAL</h2>
+                </div>
+                <div class="section-content">
+                    <div class="content-main">
+                        <p>Giving the AI a <b>role</b> (e.g., 'a teacher') and a <b>goal</b> (e.g., 'to help students learn for themselves') helps establish <b>context</b> and influences its <b>communication style</b>. In some circumstances, it has been found to improve <b>accuracy</b>.</p>
+                        <div class="code-wrapper">
+                            <code>Act as … Your goal is …</code>
+                        </div>
+                    </div>
+                    <div class="example-wrapper">
+                        <div class="example-dropdown">
+                            <span>Example</span>
+                            <span class="arrow">▶</span>
+                        </div>
+                        <div class="example-content"><b>Act as</b> patient teacher for level 6 students. <b>Your goal is</b> to help students learn for themselves, rather than providing answers directly.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP-BY-STEP PROCESS Section -->
+            <div class="section step-by-step">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20 180 L20 150 L50 150 L50 120 L80 120 L80 90 L110 90 L110 60 L140 60 L140 30 L170 30 L170 180 Z" fill="rgb(154, 52, 18)"/>
+                        </svg>
+                    </div>
+                    <h2>STEP-BY-STEP PROCESS</h2>
+                </div>
+                <div class="section-content">
+                    <div class="content-main">
+                        <p>Breaking down the task into <b>logical steps</b> can have a big impact on <b>accuracy</b>. Think about how you would do the task yourself. Use <b>'If' statements</b> to describe what it should do if the user chooses different starter prompts or gives different answers to questions. For complex tasks, ask the AI to <b>think carefully and plan</b> before answering.</p>
+                        <div class="code-wrapper">
+                            <code>First, … Wait for a response. Then, … If … If …</code>
+                        </div>
+                    </div>
+                    <div class="example-wrapper">
+                        <div class="example-dropdown">
+                            <span>Example</span>
+                            <span class="arrow">▶</span>
+                        </div>
+                        <div class="example-content"><b>First,</b> you must always start the conversion by asking "What topic do you want to revise?". <b>Wait for a response.</b> <b>Then,</b> ask "What do you already know?" <b>If</b> the user doesn't know much, start by recapping the basics. <b>If</b> the user knows a lot, start with a quiz. <b>Think carefully and plan</b> step-by-step to make sure the content is accurate and at the appropriate level before answering.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONSTRAINTS Section -->
+            <div class="section constraints">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgb(30 64 175)"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM9 8V6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9z"/></svg>
+                    </div>
+                    <h2>CONSTRAINTS</h2>
+                </div>
+                <div class="section-content">
+                    <div class="content-main">
+                        <p>Add any <b>restrictions</b> on how the AI should communicate or behave. Try to use <b>positive constraints</b> (‘You MUST…’) rather than <b>negative constraints</b> (‘Don’t…’) as this has been shown to generally work better.</p>
+                        <div class="code-wrapper">
+                            <code>You must …<br>It's essential that …</code>
+                        </div>
+                    </div>
+                    <div class="example-wrapper">
+                        <div class="example-dropdown">
+                            <span>Example</span>
+                            <span class="arrow">▶</span>
+                        </div>
+                        <div class="example-content"><b>You MUST</b> present one concept at a time so as not to overwhelm the user. <b>It's essential that</b> you break up explanations with regular knowledge checks.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EXAMPLES / OUTPUT FORMAT Section -->
+            <div class="section examples-output">
+                <div class="section-header">
+                    <div class="section-icon">
+                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgb(22 101 52)"><path d="M3 3v18h18V3H3zm8 16H5v-6h6v6zm0-8H5V5h6v6zm8 8h-6v-6h6v6zm0-8h-6V5h6v6z"/></svg>
+                    </div>
+                    <h2>EXAMPLES / OUTPUT FORMAT</h2>
+                </div>
+                <div class="section-content">
+                    <div class="content-main">
+                        <p>You only need to include examples it if it’s important that the AI answers in a <b>specific way</b>, e.g., in a <b>table</b> with certain headings.</p>
+                        <div class="code-wrapper">
+                            <code>Use bullet points … <br>Create a table with the following columns …</code>
+                        </div>
+                    </div>
+                    <div class="example-wrapper">
+                        <div class="example-dropdown">
+                            <span>Example</span>
+                            <span class="arrow">▶</span>
+                        </div>
+                        <div class="example-content">At the end of the quiz, <b>create a table with these columns:</b> Question, Your answer, Feedback</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTEXT / KNOWLEDGE Section -->
+            <div class="section context-knowledge">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgb(107 33 168)"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h2v16H6V4zm4 16V4h8v16h-8z"/></svg>
+                    </div>
+                    <h2>CONTEXT / KNOWLEDGE</h2>
+                </div>
+                <div class="section-content">
+                    <div class="content-main">
+                        <p>Sometimes you may want the AI to answer questions based on a <b>specific source</b> (e.g., course-specific info) rather than its <b>general training data</b>. You can include this information in the prompt, or ask the user to provide it in a document.</p>
+                        <div class="code-wrapper">
+                            <code>KNOWLEDGE – Use the following information in your answers: ...</code>
+                        </div>
+                    </div>
+                    <div class="example-wrapper">
+                        <div class="example-dropdown">
+                            <span>Example</span>
+                            <span class="arrow">▶</span>
+                        </div>
+                        <div class="example-content"><b>KNOWLEDGE –</b> You must always base your feedback on the following explanation, which is based on what I taught students in my class …</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REDUCE HALLUCINATION Section -->
+            <div class="section reduce-hallucination">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <svg viewBox="20 30 160 160" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <mask id="ghostHoles">
+                                    <rect width="200" height="240" fill="white"/>
+                                    <circle cx="85" cy="90" r="8" fill="black"/>
+                                    <circle cx="115" cy="90" r="8" fill="black"/>
+                                    <ellipse cx="100" cy="120" rx="6" ry="12" fill="black"/>
+                                </mask>
+                            </defs>
+                            <path d="M100 40 C130 40, 160 70, 160 110 L160 180 L145 170 L130 180 L115 170 L100 180 L85 170 L70 180 L55 170 L40 180 L40 110 C40 70, 70 40, 100 40 Z" fill="rgb(157, 23, 77)" mask="url(#ghostHoles)"/>
+                            <ellipse cx="50" cy="100" rx="15" ry="25" fill="rgb(157, 23, 77)" transform="rotate(-30 50 100)"/>
+                            <ellipse cx="150" cy="100" rx="15" ry="25" fill="rgb(157, 23, 77)" transform="rotate(30 150 100)"/>
+                        </svg>
+                    </div>
+                    <h2>REDUCE HALLUCINATION</h2>
+                </div>
+                <div class="section-content">
+                    <div class="content-main">
+                        <p>The main weakness of large-language models (which power generative AI tools like Copilot and Chat GPT) is that they often <b>make things up (hallucinate)</b>. It can help reduce this if you tell the AI what to do if it <b>doesn't know the answer</b>. If you are asking the AI to answer based on a specific source, tell it whether it should <b>ONLY use this knowledge</b>, or <b>prioritize it</b> and fall back on its wider knowledge if necessary.</p>
+                        <div class="code-wrapper">
+                            <code>Only answer using information from the KNOWLEDGE section.<br>If you're not certain of the correct answer, just say ... </code>
+                        </div>
+                    </div>
+                    <div class="example-wrapper">
+                        <div class="example-dropdown">
+                            <span>Example</span>
+                            <span class="arrow">▶</span>
+                        </div>
+                        <div class="example-content">It's essential that you <b>only answer using information from the KNOWLEDGE section</b>. Always provide a direct quote from the KNOWLEDGE section and base your answer on this. It's okay <b>if you're not certain of the correct answer</b>, or if you don't have enough information! In these cases, just say 'Sorry, I don't have enough information to answer that question, please contact ... with your query'.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript to handle the dropdown functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Select all dropdown triggers
+            const dropdowns = document.querySelectorAll('.example-dropdown');
+
+            // Add event listeners to each dropdown
+            dropdowns.forEach(function(dropdown) {
+                // Make the dropdown focusable and announce its role for accessibility
+                dropdown.setAttribute('tabindex', '0');
+                dropdown.setAttribute('role', 'button');
+                dropdown.setAttribute('aria-expanded', 'false');
+
+                // A more robust way to find the associated content panel
+                const parent = dropdown.parentElement;
+                const content = parent.querySelector('.example-content');
+                
+                // If there's no content panel, skip this dropdown
+                if (!content) return;
+
+                // Function to toggle the dropdown state
+                const toggleDropdown = () => {
+                    const isExpanded = dropdown.getAttribute('aria-expanded') === 'true';
+                    
+                    // Toggle ARIA attribute for screen readers
+                    dropdown.setAttribute('aria-expanded', !isExpanded);
+                    
+                    // Toggle active class for styling (e.g., arrow rotation)
+                    dropdown.classList.toggle('active', !isExpanded);
+                    
+                    // Toggle content visibility
+                    content.style.display = isExpanded ? 'none' : 'block';
+                };
+
+                // Event listener for mouse clicks
+                dropdown.addEventListener('click', toggleDropdown);
+
+                // Event listener for keyboard actions (Enter and Space)
+                dropdown.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        // Prevent the default action (e.g., scrolling on spacebar)
+                        event.preventDefault();
+                        toggleDropdown();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Copilot Agent Prompt Builder</title>
+    <title>Copilot Agent Prompt Builder</title>
     
     <style>
         /* CSS Variables */
@@ -46,6 +46,24 @@
             font-size: 1.5rem; /* text-2xl */
             font-weight: 700; /* font-bold */
             margin-bottom: 0.5rem; /* mb-2 */
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-icon {
+            margin-right: 1rem;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .section-icon svg {
+            width: 32px;
+            height: 32px;
         }
 
         p {
@@ -60,6 +78,7 @@
         .section-description {
             color: #374151; /* text-gray-700 */
             margin-bottom: 1rem; /* mb-4 */
+            padding: 0 1.5rem;
         }
 
         /* Layout */
@@ -77,7 +96,30 @@
 
         section {
             margin-bottom: 2rem; /* mb-8 */
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            overflow: hidden;
         }
+        
+        /* Color-coded section styles */
+        .role-goal { background-color: rgb(254, 249, 231); }
+        .role-goal .section-heading { color: rgb(133 77 14); background-color: rgb(254 240 138); }
+        
+        .step-by-step { background-color: rgb(254, 247, 237); }
+        .step-by-step .section-heading { color: rgb(154 52 18); background-color: rgb(254 215 170); }
+
+        .constraints { background-color: rgb(239, 246, 255); }
+        .constraints .section-heading { color: rgb(30 64 175); background-color: rgb(191 219 254); }
+
+        .examples-output { background-color: rgb(240, 253, 244); }
+        .examples-output .section-heading { color: rgb(22 101 52); background-color: rgb(187 247 208); }
+
+        .context-knowledge { background-color: rgb(250, 245, 255); }
+        .context-knowledge .section-heading { color: rgb(107 33 168); background-color: rgb(233 213 255); }
+
+        .reduce-hallucination { background-color: rgb(255, 240, 246); }
+        .reduce-hallucination .section-heading { color: rgb(157 23 77); background-color: rgb(251 207 232); }
+
 
         .guidance {
             background-color: #eef2ff;
@@ -97,6 +139,7 @@
             justify-content: space-between;
             align-items: center;
             margin-top: 0.5rem; /* mt-2 */
+            padding: 0 1.5rem 1.5rem;
         }
         
         .controls-container {
@@ -118,6 +161,7 @@
             min-height: 200px;
             font-family: inherit;
             font-size: 1.125rem;
+            box-sizing: border-box; /* Fix for centering issue */
         }
 
         textarea::placeholder {
@@ -255,13 +299,18 @@
             padding: 0.75rem;
             border-radius: 0.25rem;
             font-size: 0.9rem;
-            color: #4b5563;
+            color: #374151; /* Darker text for AAA contrast */
             line-height: 1.5;
             margin-top: 0.5rem; /* mt-2 */
+            margin: 0.5rem 1.5rem 1.5rem;
         }
 
         .text-center {
             text-align: center;
+        }
+
+        .textarea-wrapper {
+            padding: 0 1.5rem;
         }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -279,14 +328,22 @@
         <div class="guidance" role="region" aria-labelledby="guidance-heading">
             <h2 id="guidance-heading">How to use this template</h2>
             <p>Look at the guidance and examples and then complete the text boxes below with your own information. You don’t need to include all the sections – just fill out what's appropriate for your agent. When you’re finished, click the "Generate Instructions" button at the bottom. This will combine your text into a single block that you can copy and paste into the Copilot Agent creator.</p>
-            <p class="guidance-important">Your work will be saved in your browser, but for long-term storage, please save your final instructions in a separate document.</p>
+            <p class="guidance-important">Your work will be saved in your browser, but for long-term storage, please save your final instructions in a separate document.</p><br>
+            <p>If you want to look at some example prompts before you write your own, you can practise identifying the different components of good prompts in this 'prompt painter' game: <a href="https://edtechtools.coventry.domains/prompt-games/prompt-painter.html" target="_blank" rel="noopener noreferrer">Help Robot Paint Prompts!</a></p>
         </div>
 
-        <section aria-labelledby="role-heading">
-            <h2 id="role-heading" class="section-heading">Role and Goal</h2>
+        <section aria-labelledby="role-heading" class="role-goal">
+            <h2 id="role-heading" class="section-heading">
+                <div class="section-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                </div>
+                Role and Goal
+            </h2>
             <p class="section-description">Giving the AI a role (e.g., 'a teacher') and a goal (e.g., 'to help students learn for themselves') helps establish context and influences its communication style. In some circumstances, it has been found to improve accuracy.</p>
-            <label for="role-goal" class="sr-only">Role and Goal Instructions</label>
-            <textarea id="role-goal" aria-describedby="role-counter"></textarea>
+            <div class="textarea-wrapper">
+                <label for="role-goal" class="sr-only">Role and Goal Instructions</label>
+                <textarea id="role-goal" aria-describedby="role-counter"></textarea>
+            </div>
             <div class="controls-wrapper">
                 <div id="controls-container-role-goal" class="controls-container hidden">
                     <button id="clear-btn-role-goal" class="btn-clear">Clear</button>
@@ -297,11 +354,18 @@
             <div id="example-text-role-goal" class="example-text hidden"></div>
         </section>
 
-        <section aria-labelledby="process-heading">
-            <h2 id="process-heading" class="section-heading">Step-by-step Process</h2>
+        <section aria-labelledby="process-heading" class="step-by-step">
+            <h2 id="process-heading" class="section-heading">
+                <div class="section-icon">
+                    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><path d="M20 180 L20 150 L50 150 L50 120 L80 120 L80 90 L110 90 L110 60 L140 60 L140 30 L170 30 L170 180 Z" fill="currentColor"/></svg>
+                </div>
+                Step-by-step Process
+            </h2>
             <p class="section-description">Breaking down the task into logical steps can have a big impact on accuracy. Think about how you would do the task yourself. Use 'If' statements to describe what it should do if the user chooses different starter prompts or gives different answers to questions.</p>
-            <label for="step-by-step" class="sr-only">Step-by-step Process Instructions</label>
-            <textarea id="step-by-step" aria-describedby="process-counter"></textarea>
+            <div class="textarea-wrapper">
+                <label for="step-by-step" class="sr-only">Step-by-step Process Instructions</label>
+                <textarea id="step-by-step" aria-describedby="process-counter"></textarea>
+            </div>
             <div class="controls-wrapper">
                 <div id="controls-container-step-by-step" class="controls-container hidden">
                     <button id="clear-btn-step-by-step" class="btn-clear">Clear</button>
@@ -312,11 +376,18 @@
             <div id="example-text-step-by-step" class="example-text hidden"></div>
         </section>
 
-        <section aria-labelledby="constraints-heading">
-            <h2 id="constraints-heading" class="section-heading">Constraints</h2>
+        <section aria-labelledby="constraints-heading" class="constraints">
+            <h2 id="constraints-heading" class="section-heading">
+                <div class="section-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM9 8V6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9z"/></svg>
+                </div>
+                Constraints
+            </h2>
             <p class="section-description">Add any restrictions on how Copilot should communicate or behave. Try to use positive constraints (‘You MUST…’) rather than negative constraints (‘Don’t…’) as this has been shown to generally work better.</p>
-            <label for="constraints" class="sr-only">Constraints Instructions</label>
-            <textarea id="constraints" aria-describedby="constraints-counter"></textarea>
+            <div class="textarea-wrapper">
+                <label for="constraints" class="sr-only">Constraints Instructions</label>
+                <textarea id="constraints" aria-describedby="constraints-counter"></textarea>
+            </div>
             <div class="controls-wrapper">
                 <div id="controls-container-constraints" class="controls-container hidden">
                     <button id="clear-btn-constraints" class="btn-clear">Clear</button>
@@ -327,11 +398,18 @@
             <div id="example-text-constraints" class="example-text hidden"></div>
         </section>
 
-        <section aria-labelledby="examples-heading">
-            <h2 id="examples-heading" class="section-heading">Examples / Output Format</h2>
+        <section aria-labelledby="examples-heading" class="examples-output">
+            <h2 id="examples-heading" class="section-heading">
+                <div class="section-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3v18h18V3H3zm8 16H5v-6h6v6zm0-8H5V5h6v6zm8 8h-6v-6h6v6zm0-8h-6V5h6v6z"/></svg>
+                </div>
+                Examples / Output Format
+            </h2>
             <p class="section-description">This is an optional section. Only include it if it’s important that Copilot answers in a specific way, e.g., in a table with certain headings. Otherwise, it's recommended to test your Agent without examples first to not reduce its flexibility.</p>
-            <label for="examples" class="sr-only">Examples / Output Format Instructions</label>
-            <textarea id="examples" aria-describedby="examples-counter"></textarea>
+            <div class="textarea-wrapper">
+                <label for="examples" class="sr-only">Examples / Output Format Instructions</label>
+                <textarea id="examples" aria-describedby="examples-counter"></textarea>
+            </div>
             <div class="controls-wrapper">
                 <div id="controls-container-examples" class="controls-container hidden">
                     <button id="clear-btn-examples" class="btn-clear">Clear</button>
@@ -342,11 +420,18 @@
             <div id="example-text-examples" class="example-text hidden"></div>
         </section>
 
-        <section aria-labelledby="knowledge-heading">
-            <h2 id="knowledge-heading" class="section-heading">Knowledge</h2>
+        <section aria-labelledby="knowledge-heading" class="context-knowledge">
+            <h2 id="knowledge-heading" class="section-heading">
+                <div class="section-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h2v16H6V4zm4 16V4h8v16h-8z"/></svg>
+                </div>
+                Knowledge
+            </h2>
             <p class="section-description">This is an optional section. Include it if you want Copilot to answer questions based on specific information (e.g., internal team info). You can include links to further info and ask Copilot to provide these to the user. If creating a student-facing agent, you could provide course details, information about key concepts at the right level, feedback or model answers.</p>
-            <label for="knowledge" class="sr-only">Knowledge Instructions</label>
-            <textarea id="knowledge" aria-describedby="knowledge-counter"></textarea>
+            <div class="textarea-wrapper">
+                <label for="knowledge" class="sr-only">Knowledge Instructions</label>
+                <textarea id="knowledge" aria-describedby="knowledge-counter"></textarea>
+            </div>
             <div class="controls-wrapper">
                 <div id="controls-container-knowledge" class="controls-container hidden">
                     <button id="clear-btn-knowledge" class="btn-clear">Clear</button>
@@ -357,11 +442,30 @@
             <div id="example-text-knowledge" class="example-text hidden"></div>
         </section>
 
-        <section aria-labelledby="hallucinations-heading">
-            <h2 id="hallucinations-heading" class="section-heading">Reduce Hallucinations</h2>
+        <section aria-labelledby="hallucinations-heading" class="reduce-hallucination">
+            <h2 id="hallucinations-heading" class="section-heading">
+                <div class="section-icon">
+                    <svg viewBox="20 30 160 160" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <mask id="ghostHoles">
+                                <rect width="200" height="240" fill="white"/>
+                                <circle cx="85" cy="90" r="8" fill="black"/>
+                                <circle cx="115" cy="90" r="8" fill="black"/>
+                                <ellipse cx="100" cy="120" rx="6" ry="12" fill="black"/>
+                            </mask>
+                        </defs>
+                        <path d="M100 40 C130 40, 160 70, 160 110 L160 180 L145 170 L130 180 L115 170 L100 180 L85 170 L70 180 L55 170 L40 180 L40 110 C40 70, 70 40, 100 40 Z" fill="currentColor" mask="url(#ghostHoles)"/>
+                        <ellipse cx="50" cy="100" rx="15" ry="25" fill="currentColor" transform="rotate(-30 50 100)"/>
+                        <ellipse cx="150" cy="100" rx="15" ry="25" fill="currentColor" transform="rotate(30 150 100)"/>
+                    </svg>
+                </div>
+                Reduce Hallucinations
+            </h2>
             <p class="section-description">This is an optional section. If you provide custom 'knowledge' for Copilot to use, you should tell it whether it should ONLY use this knowledge, or prioritize it and fall back on its wider knowledge if necessary. You should also tell it what to do if it doesn't find the answer, as this reduces the likelihood that it will make something up.</p>
-            <label for="hallucinations" class="sr-only">Reduce Hallucinations Instructions</label>
-            <textarea id="hallucinations" aria-describedby="hallucinations-counter"></textarea>
+            <div class="textarea-wrapper">
+                <label for="hallucinations" class="sr-only">Reduce Hallucinations Instructions</label>
+                <textarea id="hallucinations" aria-describedby="hallucinations-counter"></textarea>
+            </div>
             <div class="controls-wrapper">
                 <div id="controls-container-hallucinations" class="controls-container hidden">
                     <button id="clear-btn-hallucinations" class="btn-clear">Clear</button>
@@ -377,23 +481,25 @@
         </div>
 
         <div id="final-output-container" class="hidden" aria-live="assertive">
-            <h2 class="section-heading">Your Combined Instructions</h2>
-            <p class="section-description">Copy the text below and paste it into the 'Instructions' box in the Copilot Agent creator. Test how the Agent works and make changes to the instructions on this page if it's not behaving as expected. </p>
-            <div class="output-header">
-                <span class="font-semibold">Total Character Count:</span>
-                <span id="final-char-count">0 / 8000</span>
-            </div>
-            <label for="final-output" class="sr-only">Combined Instructions</label>
-            <textarea id="final-output" readonly rows="15"></textarea>
-            <div class="text-center" style="margin-top: 1rem;">
-                <button id="copy-btn" class="btn btn-secondary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="copy-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-                      <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
-                      <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
-                    </svg>
-                    Copy to Clipboard
-                </button>
-                <span id="copy-success" class="copy-success-message" aria-live="assertive"></span>
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold mb-4">Your Combined Instructions</h2>
+                <p class="mb-4">Copy the text below and paste it into the 'Instructions' box in the Copilot Agent creator. Test how the Agent works and make changes to the instructions on this page if it's not behaving as expected. </p>
+                <div class="output-header">
+                    <span class="font-semibold">Total Character Count:</span>
+                    <span id="final-char-count">0 / 8000</span>
+                </div>
+                <label for="final-output" class="sr-only">Combined Instructions</label>
+                <textarea id="final-output" readonly rows="15" class="w-full"></textarea>
+                <div class="text-center" style="margin-top: 1rem;">
+                    <button id="copy-btn" class="btn btn-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="copy-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                          <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                          <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                        </svg>
+                        Copy to Clipboard
+                    </button>
+                    <span id="copy-success" class="copy-success-message" aria-live="assertive"></span>
+                </div>
             </div>
         </div>
     </main>

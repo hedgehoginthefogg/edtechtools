@@ -22,7 +22,6 @@
 </head>
 <body class="text-slate-800">
 
-    <!-- Header & Navigation -->
     <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 border-b border-slate-200">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-3">
@@ -36,28 +35,27 @@
                 <a href="#files" class="hover:text-sky-500 transition-colors">Key Files</a>
                 <a href="#systems" class="hover:text-sky-500 transition-colors">Core Systems</a>
                 <a href="#mocap" class="hover:text-sky-500 transition-colors">Mo-Cap</a>
+                <a href="#faq" class="hover:text-sky-500 transition-colors">Troubleshooting & FAQ</a>
                 <a href="#deployment" class="hover:text-sky-500 transition-colors">Deployment</a>
             </nav>
             <button id="mobile-menu-button" class="md:hidden p-2 rounded-md hover:bg-slate-100">
                 <i data-lucide="menu"></i>
             </button>
         </div>
-        <!-- Mobile Menu -->
         <div id="mobile-menu" class="hidden md:hidden px-6 pb-4">
             <nav class="flex flex-col space-y-3">
                 <a href="#overview" class="block py-2 px-3 rounded-md hover:bg-slate-100">Overview</a>
                 <a href="#files" class="block py-2 px-3 rounded-md hover:bg-slate-100">Key Files</a>
                 <a href="#systems" class="block py-2 px-3 rounded-md hover:bg-slate-100">Core Systems</a>
                 <a href="#mocap" class="block py-2 px-3 rounded-md hover:bg-slate-100">Mo-Cap</a>
+                <a href="#faq" class="block py-2 px-3 rounded-md hover:bg-slate-100">Troubleshooting & FAQ</a>
                 <a href="#deployment" class="block py-2 px-3 rounded-md hover:bg-slate-100">Deployment</a>
             </nav>
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="container mx-auto px-6 py-12">
 
-        <!-- Project Overview -->
         <section id="overview" class="content-section mb-16">
             <h2 class="text-3xl font-bold mb-6 text-slate-900 border-b pb-3 flex items-center"><i data-lucide="binary" class="mr-3 text-sky-500"></i>Project Overview</h2>
             <div class="grid md:grid-cols-2 gap-8">
@@ -77,42 +75,35 @@
             </div>
         </section>
 
-        <!-- Key Files and Folders -->
         <section id="files" class="content-section mb-16">
             <h2 class="text-3xl font-bold mb-6 text-slate-900 border-b pb-3 flex items-center"><i data-lucide="folder-tree" class="mr-3 text-sky-500"></i>Key Files and Folders</h2>
             <p class="mb-8 text-slate-600">The most important project files are located in the <code class="bg-slate-100 text-slate-700 px-2 py-1 rounded-md text-sm">Content > MyStuff</code> folder. This is the main hub for the project's custom logic and assets.</p>
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- BP_Charlie -->
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                     <h3 class="font-semibold text-slate-900 mb-2">BP_Charlie</h3>
                     <p class="text-sm text-slate-600 mb-3">The blueprint for the main NPC, Charlie, the MetaHuman students interact with.</p>
                     <code class="block text-xs bg-slate-100 text-slate-700 p-2 rounded-md break-all">Content\MyStuff\DialogueSystem\NPCs\BP_Charlie.uasset</code>
                 </div>
-                <!-- VRPawn_Dialogue -->
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                     <h3 class="font-semibold text-slate-900 mb-2">VRPawn_Dialogue</h3>
                     <p class="text-sm text-slate-600 mb-3">The player character blueprint, containing interaction logic for the dialogue UI.</p>
                     <code class="block text-xs bg-slate-100 text-slate-700 p-2 rounded-md break-all">Content\MyStuff\DialogueSystem\VRPawn\VRPawn_Dialogue.uasset</code>
                 </div>
-                <!-- AC_CharlieDialogueTree -->
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                     <h3 class="font-semibold text-slate-900 mb-2">AC_CharlieDialogueTree</h3>
                     <p class="text-sm text-slate-600 mb-3">Actor Component holding the entire branching dialogue tree for Charlie.</p>
                     <code class="block text-xs bg-slate-100 text-slate-700 p-2 rounded-md break-all">Content\MyStuff\DialogueSystem\DialogueTrees\AC_CharlieDialogueTree.uasset</code>
                 </div>
-                <!-- BPI_Interactable -->
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                     <h3 class="font-semibold text-slate-900 mb-2">BPI_Interactable</h3>
                     <p class="text-sm text-slate-600 mb-3">Blueprint Interface for communication between the VRPawn and Charlie.</p>
                     <code class="block text-xs bg-slate-100 text-slate-700 p-2 rounded-md break-all">Content\MyStuff\DialogueSystem\BPI_Interactable.uasset</code>
                 </div>
-                <!-- ABP_MH_Charlie -->
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                     <h3 class="font-semibold text-slate-900 mb-2">ABP_MH_Charlie</h3>
                     <p class="text-sm text-slate-600 mb-3">Animation Blueprint that controls all of Charlie's body animations via a state machine.</p>
                     <code class="block text-xs bg-slate-100 text-slate-700 p-2 rounded-md break-all">Content\MyStuff\DialogueSystem\Animations\BodyAnims\A_MH_m_med_nrw_final\ABP_MH_Charlie.uasset</code>
                 </div>
-                <!-- Face_AnimBP -->
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                     <h3 class="font-semibold text-slate-900 mb-2">Face_AnimBP</h3>
                     <p class="text-sm text-slate-600 mb-3">Modified MetaHuman face blueprint with an idle animation. Only edit to disable idle during Mo-Cap.</p>
@@ -121,21 +112,17 @@
             </div>
         </section>
 
-        <!-- Core Systems -->
         <section id="systems" class="content-section mb-16">
             <h2 class="text-3xl font-bold mb-6 text-slate-900 border-b pb-3 flex items-center"><i data-lucide="toy-brick" class="mr-3 text-sky-500"></i>Core Systems</h2>
             <div class="space-y-8">
-                <!-- Dialogue System -->
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                     <h3 class="text-xl font-semibold text-slate-900 mb-3">Dialogue System</h3>
                     <p class="text-slate-600 mb-4">The heart of the project, based on the <a href="https://www.youtube.com/watch?v=88xikHeYQDA" target="_blank" class="text-sky-600 hover:underline font-medium">Ultimate Dialogue System tutorial</a>. Logic is split between <code class="bg-slate-100 text-slate-700 px-2 py-1 rounded-md text-sm">AC_DialogueBase</code> and <code class="bg-slate-100 text-slate-700 px-2 py-1 rounded-md text-sm">AC_CharlieDialogueTree</code>. To edit dialogue, open the `AC_CharlieDialogueTree` blueprint.</p>
                 </div>
-                <!-- Animations -->
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                     <h3 class="text-xl font-semibold text-slate-900 mb-3">Animations</h3>
                     <p class="text-slate-600 mb-4">Body animations are controlled by the <code class="bg-slate-100 text-slate-700 px-2 py-1 rounded-md text-sm">ABP_MH_Charlie</code> state machine. Facial animations are played as "Animation Montages" and assigned in the dialogue tree; simply convert a recorded animation to a montage and select it in the 'Add Dialogue' node.</p>
                 </div>
-                <!-- Level Transitions -->
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                     <h3 class="text-xl font-semibold text-slate-900 mb-3">Level Transitions</h3>
                     <p class="text-slate-600 mb-4">The project uses a fade-to-black effect for level transitions, adapted from a tutorial by <a href="https://www.youtube.com/@GDXR" target="_blank" class="text-sky-600 hover:underline font-medium">GDXR</a>. The <code class="bg-slate-100 text-slate-700 px-2 py-1 rounded-md text-sm">BPI_Interactable</code> interface triggers this fade on the player pawn.</p>
@@ -143,7 +130,6 @@
             </div>
         </section>
 
-        <!-- Motion Capture & Audio -->
         <section id="mocap" class="content-section mb-16">
             <h2 class="text-3xl font-bold mb-6 text-slate-900 border-b pb-3 flex items-center"><i data-lucide="mic-vocal" class="mr-3 text-sky-500"></i>Motion Capture & Audio</h2>
             <div class="grid md:grid-cols-5 gap-8">
@@ -171,8 +157,33 @@
                 </div>
             </div>
         </section>
+        
+        <section id="faq" class="content-section mb-16">
+            <h2 class="text-3xl font-bold mb-6 text-slate-900 border-b pb-3 flex items-center"><i data-lucide="wrench" class="mr-3 text-sky-500"></i>Troubleshooting & FAQ</h2>
+            <div class="space-y-8">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-xl font-semibold text-slate-900 mb-3">Q: The player is spawning in the wrong place. How do I fix this?</h3>
+                    <p class="text-slate-600 mb-4">
+                        This can happen if the Quest 2 headset has stored spatial information about the physical room you're in. This saved data can interfere with the simulation's intended spawn point. It is an issue with the headset's memory, not the Charlie VR app itself.
+                    </p>
+                    <p class="text-slate-600 mb-2 font-medium">
+                        To fix this, you need to clear the headset's stored spatial data:
+                    </p>
+                    <ol class="list-decimal list-inside space-y-3 text-slate-600">
+                        <li>In the Quest 2, go to <strong class="text-slate-700">Settings</strong> (cog symbol).</li>
+                        <li>Scroll to find and select <strong class="text-slate-700">Privacy and Safety</strong>, then go to <strong class="text-slate-700">Device Permissions</strong>.</li>
+                        Turn <strong class="text-red-600">OFF</strong> the "Enhanced Spatial Services" toggle. Meta can sometimes re-enable this during updates, so it's worth checking if the issue occurs.</li>
+                        <li>In the same "Privacy and Safety" menu, find the option to <strong class="text-red-600">clear physical space history</strong> and activate it.</li>
+                        <li>Also find and activate the option to <strong class="text-red-600">clear data stored on servers</strong> to ensure all spatial information is removed.</li>
+                        <li>Relaunch the Charlie VR app. The player should now spawn in the correct location in front of Charlie.</li>
+                    </ol>
+                    <p class="text-slate-600 mt-4">
+                        <strong class="text-slate-700">If the issue persists,</strong> try taking the headset to a completely different room, creating a new boundary there, and then returning to the original room to create the boundary again. This can force a reset.
+                    </p>
+                </div>
+            </div>
+        </section>
 
-        <!-- Packaging and Deployment -->
         <section id="deployment" class="content-section">
             <h2 class="text-3xl font-bold mb-6 text-slate-900 border-b pb-3 flex items-center"><i data-lucide="rocket" class="mr-3 text-sky-500"></i>Packaging & Deployment</h2>
             <div class="space-y-8">
@@ -200,7 +211,6 @@
 
     </main>
 
-    <!-- Footer -->
     <footer class="bg-slate-800 text-slate-400 mt-16">
         <div class="container mx-auto px-6 py-8 text-center">
             <p class="text-sm">Charlie Nursing Sim VR Project Handover Documentation</p>
